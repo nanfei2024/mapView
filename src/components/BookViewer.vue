@@ -26,6 +26,7 @@
             <button :class="{active: catalogTab==='book'}" @click="catalogTab='book'">书籍目录</button>
             <button :class="{active: catalogTab==='figure'}" @click="catalogTab='figure'">图目录</button>
             <button :class="{active: catalogTab==='table'}" @click="catalogTab='table'">表目录</button>
+            <button :class="{active: catalogTab==='ref'}" @click="catalogTab='ref'">参考文献</button>
           </div>
           <div class="catalog-content">
             <template v-if="catalogTab==='book'">
@@ -176,6 +177,24 @@
                 </li>
               </ul>
             </template>
+            <template v-else-if="catalogTab==='ref'">
+              <div v-if="referencesLoading" class="loading-indicator">
+                <p>正在加载参考文献列表...</p>
+              </div>
+              <div v-else-if="referencesError" class="error-message">
+                <p>{{ referencesError }}</p>
+              </div>
+              <div v-else-if="references.length === 0" class="no-images-message">
+                <p>暂无参考文献</p>
+              </div>
+              <ul v-else>
+                <li v-for="refItem in references" :key="refItem.id || refItem.key || refItem.title" @click="selectReference(refItem)"
+                    :style="{cursor: 'pointer'}">
+                  <span class="figure-icon">📚</span>
+                  <span class="figure-title-text">{{ formatReferenceTitle(refItem) }}</span>
+                </li>
+              </ul>
+            </template>
           </div>
         </div>
         <div class="center-area">
@@ -201,6 +220,32 @@
           <div v-else-if="centerType==='table'">
             <div v-if="centerTableHtml" v-html="centerTableHtml"></div>
             <div v-else class="center-placeholder">请选择表目录项</div>
+          </div>
+          <div v-else-if="centerType==='reference'" class="figure-preview-panel">
+            <div class="figure-context-card" style="max-width: 900px;">
+              <div class="context-section-title">参考文献信息</div>
+              <div class="context-text" v-if="selectedReference">
+                <p>{{ formatReferenceFull(selectedReference) }}</p>
+              </div>
+              <div class="context-section-title" style="margin-top:12px;">文中引用语句</div>
+              <div class="context-text" v-if="referenceCitationsLoading">
+                正在检索引用语句...
+              </div>
+              <div class="context-text" v-else-if="referenceCitationsError">
+                {{ referenceCitationsError }}
+              </div>
+              <div class="context-text" v-else-if="referenceCitations.length === 0">
+                未找到引用语句
+              </div>
+              <ul v-else class="detailed-items" style="margin-top:6px;">
+                <li v-for="(c,idx) in referenceCitations" :key="idx" class="sub-item">
+                  <div class="sub-item-title">
+                    <span class="item-prefix">{{ c.sectionTitle }}</span>
+                    <span class="item-title">{{ c.text }}</span>
+                  </div>
+                </li>
+              </ul>
+            </div>
           </div>
           <div v-else class="center-placeholder">请选择目录项</div>
         </div>
@@ -1308,8 +1353,8 @@
               );
               
               // 递归处理子目录项
-              const processTocItems = (items, level = 1) => {
-                items.forEach((tocItem) => {
+              const processTocItems = (items: any[], level = 1) => {
+                items.forEach((tocItem: any) => {
                   // 计算缩进（每个层级增加2个空格）
                   const indent = '  '.repeat(level);
                   
@@ -2366,13 +2411,13 @@
           // 遍历详细目录项
           if (section.detailedToc) {
             // 按类型分组目录项
-            const headings = section.detailedToc.filter(item => !item.isSpecialTitle);
-            const specialTitles = section.detailedToc.filter(item => item.isSpecialTitle);
-            const figures = specialTitles.filter(item => item.contentType === 'image');
-            const tables = specialTitles.filter(item => item.contentType === 'table');
+            const headings = section.detailedToc.filter((item: any) => !item.isSpecialTitle);
+            const specialTitles = section.detailedToc.filter((item: any) => item.isSpecialTitle);
+            const figures = specialTitles.filter((item: any) => item.contentType === 'image');
+            const tables = specialTitles.filter((item: any) => item.contentType === 'table');
             
             // 先添加正常标题
-            for (const item of headings) {
+              for (const item of headings as any[]) {
               const indent = '  '.repeat(item.level - 1);
               let titleLine = `${indent}- `;
               
@@ -2391,7 +2436,7 @@
               
               // 添加子项
               if (item.items && item.items.length > 0) {
-                for (const subItem of item.items) {
+                for (const subItem of item.items as any[]) {
                   const subIndent = '  '.repeat(item.level);
                   let subTitleLine = `${subIndent}- `;
                   
@@ -2414,7 +2459,7 @@
             // 然后添加图表（如果有）
             if (figures.length > 0) {
               markdown += '\n#### 图目录\n\n';
-              for (const figure of figures) {
+            for (const figure of figures as any[]) {
                 markdown += `- ${figure.title}\n`;
               }
               markdown += '\n';
@@ -2422,7 +2467,7 @@
             
             if (tables.length > 0) {
               markdown += '\n#### 表目录\n\n';
-              for (const table of tables) {
+            for (const table of tables as any[]) {
                 markdown += `- ${table.title}\n`;
               }
               markdown += '\n';
@@ -2667,7 +2712,7 @@
   };
   
   // 新增三栏布局相关状态
-  const catalogTab = ref<'book'|'figure'|'table'>('book');
+  const catalogTab = ref<'book'|'figure'|'table'|'ref'>('book');
   
   // 图/表目录数据（基于后端返回的图片列表）
   const figureCatalog = computed(() => {
@@ -2737,7 +2782,7 @@
   }
   
   // 中间区展示内容
-  const centerType = ref<'figure'|'table'|''>('');
+  const centerType = ref<'figure'|'table'|'reference'|''>('');
   const centerFigureUrl = ref('');
   const centerTableHtml = ref('');
   
@@ -2780,6 +2825,130 @@
   const sectionImages = ref<any[]>([]);
   const imagesLoading = ref(false);
   
+  // 参考文献相关状态
+  const references = ref<any[]>([]);
+  const referencesLoading = ref(false);
+  const referencesError = ref('');
+  const selectedReference = ref<any>(null);
+  const referenceCitations = ref<{sectionTitle: string; text: string}[]>([]);
+  const referenceCitationsLoading = ref(false);
+  const referenceCitationsError = ref('');
+
+  const formatReferenceTitle = (refItem: any) => {
+    const num = refItem.number || refItem.key || '';
+    const title = refItem.title || refItem.raw || '';
+    const author = refItem.author || '';
+    return [num ? `[${num}]` : '', author, title].filter(Boolean).join(' ');
+  };
+
+  const formatReferenceFull = (refItem: any) => {
+    const parts = [
+      refItem.number ? `[${refItem.number}]` : '',
+      refItem.author,
+      refItem.year,
+      refItem.title,
+      refItem.journal || refItem.publisher,
+      refItem.pages,
+      refItem.doi ? `DOI: ${refItem.doi}` : ''
+    ].filter(Boolean);
+    return parts.join(' · ');
+  };
+
+  const fetchReferences = async () => {
+    if (!selectedBook.value) return;
+    referencesLoading.value = true;
+    referencesError.value = '';
+    try {
+      const bookId = parseInt(selectedBook.value.id || '1');
+      const possibleUrls = [
+        `http://localhost:8080/api/files/book/${bookId}/references`,
+        `http://localhost:8080/api/references?bookId=${bookId}`,
+        `http://localhost:8080/api/files/references?bookId=${bookId}`
+      ];
+      let res: any = null;
+      for (const url of possibleUrls) {
+        try {
+          const r = await axios.get(url);
+          if (r && r.data) { res = r; break; }
+        } catch (e) {
+          // try next
+        }
+      }
+      if (res && Array.isArray(res.data?.references)) {
+        references.value = res.data.references;
+      } else if (res && Array.isArray(res.data)) {
+        references.value = res.data;
+      } else {
+        references.value = [];
+      }
+    } catch (e: any) {
+      referencesError.value = `获取参考文献失败: ${e?.message || e}`;
+    } finally {
+      referencesLoading.value = false;
+    }
+  };
+
+  const selectReference = async (refItem: any) => {
+    selectedReference.value = refItem;
+    centerType.value = 'reference';
+    await fetchReferenceCitations(refItem);
+  };
+
+  const fetchReferenceCitations = async (refItem: any) => {
+    referenceCitationsLoading.value = true;
+    referenceCitationsError.value = '';
+    referenceCitations.value = [];
+    try {
+      const id = refItem.id || refItem.number || refItem.key || '';
+      // 优先尝试后端接口
+      const possibleUrls = id ? [
+        `http://localhost:8080/api/references/${encodeURIComponent(id)}/citations`,
+        `http://localhost:8080/api/files/references/${encodeURIComponent(id)}/citations`
+      ] : [];
+      let res: any = null;
+      for (const url of possibleUrls) {
+        try {
+          const r = await axios.get(url);
+          if (r && Array.isArray(r.data?.citations)) { res = r; break; }
+        } catch (_) {}
+      }
+      if (res) {
+        referenceCitations.value = res.data.citations.map((c: any) => ({
+          sectionTitle: c.sectionTitle || c.section || '未知小节',
+          text: c.text || c.sentence || ''
+        }));
+        return;
+      }
+      // 本地扫描：按章节小节内容查找 [n] 或标题关键字
+      const numberKey = refItem.number ? String(refItem.number) : '';
+      const titleKey = (refItem.title || '').slice(0, 20);
+      const patternList: RegExp[] = [];
+      if (numberKey) patternList.push(new RegExp(`\\\\[\\\\s*${numberKey}\\\\]`));
+      if (numberKey) patternList.push(new RegExp(`图\\\\s*${numberKey}`));
+      if (titleKey) patternList.push(new RegExp(titleKey.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+      if (!selectedBook.value) return;
+      for (const chapter of selectedBook.value.chapters) {
+        for (const section of chapter.sections) {
+          if (!section.fileId) continue;
+          const content = section.content || await fetchSectionContent(section.fileId);
+          if (!content) continue;
+          const lines = content.split(/\r?\n/);
+          for (let i = 0; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (!line) continue;
+            if (patternList.some(re => re.test(line))) {
+              referenceCitations.value.push({ sectionTitle: section.title, text: line });
+            }
+          }
+        }
+      }
+    } catch (e: any) {
+      referenceCitationsError.value = `检索引用语句失败: ${e?.message || e}`;
+    } finally {
+      referenceCitationsLoading.value = false;
+    }
+  };
+
   // 提取图片上下文的方法
   const extractFigureContext = async (item: any) => {
     // 重置上下文
@@ -2955,6 +3124,9 @@
       }
     } else {
       sectionImages.value = [];
+    }
+    if (tab === 'ref' && references.value.length === 0 && !referencesLoading.value) {
+      await fetchReferences();
     }
   });
   
