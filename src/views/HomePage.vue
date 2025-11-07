@@ -10,6 +10,8 @@
       @change-basemap="changeBasemap"
       @basemap-loaded="handleBasemapLoaded"
       :currentBasemap="currentBasemap"
+      :showPlateManager="showPlateManager"
+      @close-plate-manager="showPlateManager = false"
       ref="mapRef"
       @book-viewer-change="handleBookViewerChange"
     />
@@ -56,6 +58,10 @@
         <div class="control-btn" @click="navigateToBooks">
           <span class="btn-icon">📚</span>
           <span class="btn-text">书籍查看</span>
+        </div>
+        <div class="control-btn" @click="togglePlateManager">
+          <span class="btn-icon">🗂️</span>
+          <span class="btn-text">板块数据管理</span>
         </div>
       </div>
 
@@ -398,6 +404,9 @@ const handleBookViewerChange = (isVisible: boolean) => {
 // 添加测量面板相关状态
 const showMeasurePanel = ref(false);
 
+// 添加板块数据管理面板状态
+const showPlateManager = ref(false);
+
 // 切换测量面板显示
 const toggleMeasurePanel = () => {
   showMeasurePanel.value = !showMeasurePanel.value;
@@ -450,6 +459,11 @@ const navigateToBooks = () => {
   router.push('/books');
 };
 
+// 切换板块数据管理面板
+const togglePlateManager = () => {
+  showPlateManager.value = !showPlateManager.value;
+};
+
 onMounted(() => {
   document.addEventListener('click', handleClickOutside);
 });
@@ -478,68 +492,87 @@ onUnmounted(() => {
   position: absolute;
   top: 20px;
   left: 20px;
-  width: 400px; /* 增加宽度以适应横向按钮 */
-  background: rgba(10, 18, 25, 0.85); /* 半透明深色背景 */
-  border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.05);
-  padding: 16px;
+  width: 360px;
+  background: linear-gradient(135deg, rgba(10, 18, 25, 0.92) 0%, rgba(15, 25, 35, 0.92) 100%);
+  border-radius: 16px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4), 
+              0 0 0 1px rgba(255, 255, 255, 0.08),
+              inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  padding: 20px;
   z-index: 1000;
   transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  border: 1px solid rgba(26, 38, 53, 0.8);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
 }
 
 .control-panel h3 {
-  margin: 0 0 20px 0;
-  font-size: 18px;
+  margin: 0 0 24px 0;
+  font-size: 20px;
   font-weight: 700;
-  padding-bottom: 12px;
-  border-bottom: 1px solid rgba(26, 38, 53, 0.8);
+  padding-bottom: 16px;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.08);
   text-align: center;
   position: relative;
-  letter-spacing: 1px;
-  background: linear-gradient(135deg, #00e5b0 0%, #00a3ff 100%);
+  letter-spacing: 1.2px;
+  background: linear-gradient(135deg, #00e5b0 0%, #00a3ff 50%, #00e5b0 100%);
+  background-size: 200% auto;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradient-shift 3s ease infinite;
   text-shadow: 0 2px 10px rgba(0, 229, 176, 0.2);
+}
+
+@keyframes gradient-shift {
+  0%, 100% {
+    background-position: 0% center;
+  }
+  50% {
+    background-position: 100% center;
+  }
 }
 
 .control-panel h3::after {
   content: '';
   position: absolute;
-  bottom: -1px;
+  bottom: -2px;
   left: 50%;
   transform: translateX(-50%);
-  width: 100px;
-  height: 2px;
-  background: linear-gradient(90deg, rgba(0, 229, 176, 0.2) 0%, rgba(0, 229, 176, 1) 50%, rgba(0, 229, 176, 0.2) 100%);
-  border-radius: 2px;
+  width: 120px;
+  height: 3px;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(0, 229, 176, 0.4) 20%, 
+    rgba(0, 229, 176, 1) 50%, 
+    rgba(0, 163, 255, 1) 50%, 
+    rgba(0, 229, 176, 0.4) 80%, 
+    transparent 100%);
+  border-radius: 3px;
+  box-shadow: 0 0 10px rgba(0, 229, 176, 0.5);
 }
 
 .control-buttons {
-  display: flex;
-  flex-direction: row;
-  gap: 10px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
   margin-bottom: 16px;
-  justify-content: space-between;
 }
 
 .control-btn {
   position: relative;
-  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 12px 4px;
-  background: rgba(17, 26, 36, 0.8);
-  border: 1px solid rgba(26, 38, 53, 0.8);
-  border-radius: 10px;
+  padding: 18px 10px;
+  background: linear-gradient(135deg, rgba(17, 26, 36, 0.95) 0%, rgba(26, 38, 53, 0.95) 100%);
+  border: 1.5px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  min-width: 60px;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .control-btn::before {
@@ -549,49 +582,78 @@ onUnmounted(() => {
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, rgba(0, 229, 176, 0.05) 0%, rgba(0, 163, 255, 0.05) 100%);
+  background: linear-gradient(135deg, rgba(0, 229, 176, 0.15) 0%, rgba(0, 163, 255, 0.15) 100%);
   opacity: 0;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.4s ease;
+}
+
+.control-btn::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 229, 176, 0.2) 0%, transparent 70%);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s ease, height 0.6s ease;
 }
 
 .control-btn:hover {
-  background: rgba(26, 38, 53, 0.9);
-  border-color: #00e5b0;
-  transform: translateY(-3px);
-  box-shadow: 0 6px 15px rgba(0, 229, 176, 0.15);
+  background: linear-gradient(135deg, rgba(0, 229, 176, 0.1) 0%, rgba(0, 163, 255, 0.1) 100%);
+  border-color: rgba(0, 229, 176, 0.5);
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 8px 24px rgba(0, 229, 176, 0.25), 
+              0 0 0 1px rgba(0, 229, 176, 0.1),
+              inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .control-btn:hover::before {
   opacity: 1;
 }
 
+.control-btn:hover::after {
+  width: 200px;
+  height: 200px;
+}
+
+.control-btn:active {
+  transform: translateY(-2px) scale(0.98);
+  box-shadow: 0 4px 12px rgba(0, 229, 176, 0.2);
+}
+
 .btn-icon {
-  font-size: 22px;
-  margin-bottom: 6px;
+  font-size: 28px;
+  margin-bottom: 8px;
   position: relative;
   z-index: 1;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
-  transition: transform 0.3s ease;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.4));
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  display: block;
+  line-height: 1;
 }
 
 .control-btn:hover .btn-icon {
-  transform: scale(1.1);
+  transform: scale(1.15) translateY(-2px);
+  filter: drop-shadow(0 4px 12px rgba(0, 229, 176, 0.4));
 }
 
 .btn-text {
-  font-size: 13px;
-  color: #ffffff;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.9);
   white-space: nowrap;
-  font-weight: 500;
+  font-weight: 600;
   position: relative;
   z-index: 1;
-  transition: all 0.3s ease;
-  letter-spacing: 0.5px;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  transition: all 0.4s ease;
+  letter-spacing: 0.3px;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
 }
 
 .control-btn:hover .btn-text {
   color: #00e5b0;
+  text-shadow: 0 0 8px rgba(0, 229, 176, 0.6), 0 1px 4px rgba(0, 0, 0, 0.4);
 }
 
 .panel-content {

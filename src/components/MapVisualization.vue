@@ -11,16 +11,6 @@
             :map="map"
             @toggleLayers="handleToggleLayers"
           />
-          <!-- 功能控制面板 -->
-          <div class="function-panel">
-            <!-- ...原有功能按钮... -->
-            <button class="function-btn">文件上传</button>
-            <button class="function-btn">文件列表</button>
-            <button class="function-btn">测量</button>
-            <button class="function-btn">书籍查看</button>
-            <!-- 新增板块数据管理按钮 -->
-            <button class="function-btn" @click="showPlateManager = true">板块数据管理</button>
-          </div>
         </div>
       </div>
 
@@ -236,7 +226,7 @@
     <SidebarPlateManager
       v-if="showPlateManager"
       :map="map"
-      @close="showPlateManager = false"
+      @close="$emit('close-plate-manager')"
       class="sidebar-plate-manager"
     />
   </div>
@@ -317,6 +307,7 @@ interface FileInfo {
 const props = defineProps<{
   activeLayers: string[];
   currentBasemap: string;
+  showPlateManager?: boolean;
 }>();
 
 // 定义emits
@@ -326,7 +317,9 @@ const emit = defineEmits<{
   'remove-layer': [layerName: string];
   'clear-all-layers': [];
   'change-basemap': [mapId: string];
+  'basemap-loaded': [mapId: string];
   'book-viewer-change': [isVisible: boolean];
+  'close-plate-manager': [];
 }>();
 
 // Mapbox 相关初始化
@@ -1568,7 +1561,7 @@ defineExpose({
   }
 });
 
-const showPlateManager = ref(false);
+const showPlateManager = computed(() => props.showPlateManager ?? false);
 </script>
 
 <style scoped>
@@ -2286,34 +2279,6 @@ const showPlateManager = ref(false);
   color: #b0bec5; /* 更改文字颜色 */
 }
 
-.function-panel {
-  position: absolute;
-  top: 20px;
-  left: 20px;
-  z-index: 1001;
-  background: rgba(20,30,40,0.95);
-  border-radius: 12px;
-  padding: 18px 24px 12px 24px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.15);
-  display: flex;
-  flex-direction: row;
-  gap: 16px;
-  align-items: center;
-}
-.function-btn {
-  background: #222c3a;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  padding: 8px 16px;
-  font-size: 15px;
-  cursor: pointer;
-  margin-right: 4px;
-  transition: background 0.2s;
-}
-.function-btn:hover {
-  background: #409eff;
-}
 .sidebar-plate-manager {
   position: absolute;
   top: 0;
