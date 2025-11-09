@@ -24,9 +24,9 @@
           <span class="btn-icon">🌍</span>
           <span class="btn-text">地质文档数字化</span>
         </div>
-        <div class="control-btn" @click="toggleFilePagination">
+        <div class="control-btn" @click="navigateToFileList">
           <span class="btn-icon">📋</span>
-          <span class="btn-text">文件列表</span>
+          <span class="btn-text">文件管理</span>
         </div>
         <div class="control-btn" @click="toggleMeasurePanel">
           <span class="btn-icon">📏</span>
@@ -67,7 +67,7 @@
 
       <!-- 显示的组件 -->
       <div class="panel-content" v-if="showAnyComponent">
-        <FilePagination v-if="showFilePagination" />
+        <!-- 组件内容已移至独立页面 -->
       </div>
     </div>
     
@@ -141,7 +141,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
-import FilePagination from '../components/FilePagination.vue';
 import MapVisualization from '../components/MapVisualization.vue';
 
 // 定义图层接口
@@ -183,7 +182,6 @@ const emit = defineEmits<{
   (e: 'change-basemap', mapId: string): void;
 }>();
 
-const showFilePagination = ref(false);
 const showMap = ref(true);
 const showMapDataPanel = ref(false);
 const showBookViewer = ref(false);
@@ -293,17 +291,20 @@ const basemaps = [
 
 // 计算是否显示任何组件
 const showAnyComponent = computed(() => 
-  showFilePagination.value
+  false // 所有组件已移至独立页面
 );
+
+// 获取路由实例
+const router = useRouter();
 
 // 导航到文档数字化页面
 const navigateToDocumentDigitalization = () => {
   router.push('/document-digitalization');
 };
 
-// 切换文件分页展示组件
-const toggleFilePagination = () => {
-  showFilePagination.value = !showFilePagination.value;
+// 导航到文件列表页面（包含文件、图库、表库三个标签）
+const navigateToFileList = () => {
+  router.push('/file-list');
 };
 
 // 切换地图显示
@@ -445,9 +446,6 @@ const handleClickOutside = (event: MouseEvent) => {
 const toggleBasemapSelector = () => {
   showBasemapSelector.value = !showBasemapSelector.value;
 };
-
-// 获取路由实例
-const router = useRouter();
 
 // 添加导航到书籍列表页面的方法
 const navigateToBooks = () => {

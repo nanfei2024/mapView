@@ -47,8 +47,61 @@
           </div>
           
           <div v-else-if="originalFileUrl" class="pdf-viewer">
+            <!-- PDF 预览方式切换 -->
+            <div class="pdf-viewer-controls">
+              <button 
+                class="viewer-switch-btn"
+                :class="{ active: pdfViewerType === 'mozilla' }"
+                @click="pdfViewerType = 'mozilla'"
+                title="Mozilla PDF.js（推荐）"
+              >
+                📄 PDF.js
+              </button>
+              <button 
+                class="viewer-switch-btn"
+                :class="{ active: pdfViewerType === 'google' }"
+                @click="pdfViewerType = 'google'"
+                title="Google Docs Viewer"
+              >
+                🌐 Google
+              </button>
+              <button 
+                class="viewer-switch-btn"
+                :class="{ active: pdfViewerType === 'direct' }"
+                @click="pdfViewerType = 'direct'"
+                title="直接预览"
+              >
+                🔗 Direct
+              </button>
+              <button 
+                class="viewer-switch-btn download-btn"
+                @click="downloadOriginalPdf"
+                title="下载 PDF"
+              >
+                ⬇️ 下载
+              </button>
+            </div>
+            
+            <!-- Mozilla PDF.js 查看器 -->
             <iframe 
-              :src="pdfViewerUrl" 
+              v-if="pdfViewerType === 'mozilla'"
+              :src="`https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(originalFileUrl)}`" 
+              frameborder="0"
+              class="pdf-iframe"
+            ></iframe>
+            
+            <!-- Google Docs 查看器 -->
+            <iframe 
+              v-else-if="pdfViewerType === 'google'"
+              :src="`https://docs.google.com/viewer?url=${encodeURIComponent(originalFileUrl)}&embedded=true`" 
+              frameborder="0"
+              class="pdf-iframe"
+            ></iframe>
+            
+            <!-- 直接预览 -->
+            <iframe 
+              v-else
+              :src="originalFileUrl" 
               frameborder="0"
               class="pdf-iframe"
             ></iframe>
@@ -133,6 +186,7 @@ const viewMode = ref<'rendered' | 'source'>('rendered');
 // PDF 状态
 const loadingPdf = ref(false);
 const pdfError = ref('');
+const pdfViewerType = ref<'mozilla' | 'google' | 'direct'>('mozilla'); // 默认使用 Mozilla PDF.js
 
 // Markdown 状态
 const loadingMarkdown = ref(false);
@@ -255,6 +309,23 @@ const downloadResult = () => {
 // 切换布局
 const toggleLayout = () => {
   isVertical.value = !isVertical.value;
+};
+
+// 下载原始 PDF
+const downloadOriginalPdf = () => {
+  if (!originalFileUrl.value) {
+    alert('源文件 URL 不可用');
+    return;
+  }
+  
+  // 创建一个隐藏的 a 标签进行下载
+  const a = document.createElement('a');
+  a.href = originalFileUrl.value;
+  a.download = fileName.value || 'document.pdf';
+  a.target = '_blank';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
 };
 </script>
 
@@ -488,13 +559,62 @@ const toggleLayout = () => {
 .pdf-viewer {
   width: 100%;
   height: 100%;
+  display: flex;
+  flex-direction: column;
   background: #525659;
+}
+
+.pdf-viewer-controls {
+  display: flex;
+  gap: 8px;
+  padding: 12px;
+  background: #fff;
+  border-bottom: 1px solid #e0e0e0;
+  flex-shrink: 0;
+}
+
+.viewer-switch-btn {
+  padding: 8px 16px;
+  border: 1px solid #ddd;
+  background: #fff;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.viewer-switch-btn:hover {
+  background: #f0f0f0;
+  border-color: #00a3ff;
+}
+
+.viewer-switch-btn.active {
+  background: #e6f7ff;
+  border-color: #00a3ff;
+  color: #00a3ff;
+  font-weight: 500;
+}
+
+.viewer-switch-btn.download-btn {
+  margin-left: auto;
+  background: #00a3ff;
+  color: white;
+  border-color: #00a3ff;
+}
+
+.viewer-switch-btn.download-btn:hover {
+  background: #0090e0;
 }
 
 .pdf-iframe {
   width: 100%;
-  height: 100%;
+  flex: 1;
   border: none;
+  background: #525659;
 }
 
 /* ===== Markdown 渲染 ===== */
