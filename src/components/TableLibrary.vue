@@ -4,13 +4,15 @@
       <!-- 工具栏 -->
       <div class="toolbar">
         <div class="toolbar-left">
+          <select v-model="selectedBookId" class="book-select" @change="handleBookChange">
+            <option :value="undefined">所有书籍</option>
+            <option v-for="book in books" :key="book.id" :value="book.id">
+              {{ book.title || book.name }}
+            </option>
+          </select>
           <button class="action-btn btn-import" @click="handleImport">
             <span class="btn-icon">📥</span>
             <span>导入表格</span>
-          </button>
-          <button class="action-btn btn-create" @click="handleCreate">
-            <span class="btn-icon">➕</span>
-            <span>新建表格</span>
           </button>
           <div class="search-wrapper">
             <span class="search-icon">🔍</span>
@@ -22,20 +24,6 @@
               @input="handleSearch"
             />
           </div>
-          <select v-model="categoryFilter" class="filter-select" @change="handleFilter">
-            <option value="">全部分类</option>
-            <option value="地质数据">地质数据</option>
-            <option value="矿物成分">矿物成分</option>
-            <option value="地貌特征">地貌特征</option>
-            <option value="板块运动">板块运动</option>
-            <option value="其他">其他</option>
-          </select>
-          <select v-model="typeFilter" class="filter-select" @change="handleFilter">
-            <option value="">表格类型</option>
-            <option value="Excel">Excel (xlsx)</option>
-            <option value="CSV">CSV</option>
-            <option value="JSON">JSON</option>
-          </select>
         </div>
         <div class="toolbar-right">
           <button 
@@ -49,9 +37,15 @@
         </div>
       </div>
 
+      <!-- 加载状态 -->
+      <div v-if="loading" class="loading-state">
+        <div class="spinner"></div>
+        <p>加载中...</p>
+      </div>
+
       <!-- 表格卡片列表 -->
-      <div class="table-grid">
-        <div v-if="filteredTables.length === 0" class="empty-state">
+      <div v-else class="table-grid">
+        <div v-if="allTables.length === 0" class="empty-state">
           <span class="empty-icon">📊</span>
           <p>暂无表格</p>
           <button class="empty-action-btn" @click="handleImport">
@@ -60,7 +54,7 @@
           </button>
         </div>
         <div 
-          v-for="table in filteredTables" 
+          v-for="table in paginatedTables" 
           :key="table.id"
           class="table-card"
           :class="{ selected: isSelected(table.id) }"
@@ -87,15 +81,11 @@
           </div>
           <div class="card-body">
             <h4 class="table-name" :title="table.name">{{ table.name }}</h4>
-            <p class="table-description">{{ table.description }}</p>
+            <p class="table-description">{{ table.folderName || '未知文件夹' }}</p>
             <div class="table-stats">
               <div class="stat-item">
-                <span class="stat-icon">📝</span>
-                <span class="stat-text">{{ table.rows }} 行</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-icon">📋</span>
-                <span class="stat-text">{{ table.columns }} 列</span>
+                <span class="stat-icon">📁</span>
+                <span class="stat-text">{{ table.folderName }}</span>
               </div>
               <div class="stat-item">
                 <span class="stat-icon">💾</span>
@@ -108,21 +98,15 @@
               <span class="type-badge" :class="'type-' + table.type">
                 {{ table.type }}
               </span>
-              <span class="category-badge">
-                {{ table.category }}
-              </span>
             </div>
             <div class="footer-right">
-              <button class="footer-btn" @click="editTable(table)" title="编辑">
-                ✏️
-              </button>
-              <button class="footer-btn" @click="deleteTable(table.id)" title="删除">
-                🗑️
-              </button>
+              <button class="footer-btn" @click="viewTable(table)" title="查看">👁️</button>
+              <button class="footer-btn" @click="downloadTable(table)" title="下载">⬇️</button>
+              <button class="footer-btn" @click="deleteTable(table)" title="删除">🗑️</button>
             </div>
           </div>
           <div class="card-date">
-            更新于 {{ formatDate(table.updateTime) }}
+            更新于 {{ formatDate(table.lastModified) }}
           </div>
         </div>
       </div>
@@ -130,7 +114,7 @@
       <!-- 分页 -->
       <div class="pagination" v-if="totalPages > 1">
         <div class="pagination-info">
-          <span>共 {{ totalTables }} 个表格</span>
+          <span>共 {{ allTables.length }} 个表格</span>
           <select v-model="pageSize" class="page-size-select" @change="handlePageSizeChange">
             <option :value="9">9/page</option>
             <option :value="18">18/page</option>
@@ -175,41 +159,44 @@
           <button class="preview-close" @click="closePreview">✕</button>
         </div>
         <div class="preview-body">
-          <div class="preview-info-section">
-            <div class="info-item">
-              <span class="info-label">分类：</span>
-              <span class="info-value">{{ previewTableData?.category }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">类型：</span>
-              <span class="info-value">{{ previewTableData?.type }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">行数：</span>
-              <span class="info-value">{{ previewTableData?.rows }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">列数：</span>
-              <span class="info-value">{{ previewTableData?.columns }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">大小：</span>
-              <span class="info-value">{{ formatSize(previewTableData?.size) }}</span>
-            </div>
+          <div v-if="previewLoading" class="preview-loading">
+            <div class="spinner-small"></div>
+            <p>加载中...</p>
           </div>
-          <div class="preview-description">
-            <h4>描述</h4>
-            <p>{{ previewTableData?.description }}</p>
-          </div>
-          <div class="preview-actions">
-            <button class="preview-action-btn btn-download" @click="downloadTable(previewTableData)">
+          <div v-else-if="previewError" class="preview-error">
+            <p>{{ previewError }}</p>
+            <button v-if="previewTableData" class="preview-action-btn btn-download" @click="downloadTable(previewTableData)">
               <span>⬇️</span>
-              <span>下载</span>
+              <span>下载文件</span>
             </button>
-            <button class="preview-action-btn btn-edit" @click="editTable(previewTableData)">
-              <span>✏️</span>
-              <span>编辑</span>
-            </button>
+          </div>
+          <div v-else-if="previewTableData" class="preview-image-container">
+            <img 
+              :src="getImageUrl(previewTableData.url)" 
+              :alt="previewTableData.name" 
+              @error="handleImageError"
+              class="preview-image"
+            />
+            <div class="preview-info-section">
+              <div class="info-item">
+                <span class="info-label">文件名：</span>
+                <span class="info-value">{{ previewTableData.name }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">文件夹：</span>
+                <span class="info-value">{{ previewTableData.folderName }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">大小：</span>
+                <span class="info-value">{{ formatSize(previewTableData.size) }}</span>
+              </div>
+            </div>
+            <div class="preview-actions">
+              <button class="preview-action-btn btn-download" @click="downloadTable(previewTableData)">
+                <span>⬇️</span>
+                <span>下载</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -218,109 +205,164 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
+import { fileApi, type FileItem } from '../api/fileApi';
+import { bookApi, type Book } from '../api/bookApi';
 
 // 表格数据接口
 interface TableData {
-  id: number;
+  id: string;  // 使用 property_name 作为唯一ID
   name: string;
-  description: string;
-  category: string;
-  type: string;
-  rows: number;
-  columns: number;
+  folderName: string;  // 章节属性（如 "1.1"）
+  property: string;
+  type: string;  // Excel, CSV, JSON
   size: number;
-  updateTime: string;
+  lastModified: number;
+  url: string;
+  bookId?: number;
 }
 
 // 状态管理
+const loading = ref(false);
+const books = ref<Book[]>([]);
+const selectedBookId = ref<number | undefined>(undefined);
 const searchKeyword = ref('');
-const categoryFilter = ref('');
-const typeFilter = ref('');
-const selectedTables = ref<number[]>([]);
+const selectedTables = ref<string[]>([]);
 const currentPage = ref(1);
 const pageSize = ref(9);
 const jumpPage = ref(1);
 const showPreview = ref(false);
 const previewTableData = ref<TableData | null>(null);
+const previewLoading = ref(false);
+const previewError = ref<string | null>(null);
 
-// 模拟表格数据
-const tables = ref<TableData[]>([
-  {
-    id: 1,
-    name: '亚洲地质板块数据统计表',
-    description: '包含亚洲主要地质板块的分布、面积、运动速度等详细数据',
-    category: '地质数据',
-    type: 'Excel',
-    rows: 156,
-    columns: 12,
-    size: 458000,
-    updateTime: '2025-11-09 10:30:00'
-  },
-  {
-    id: 2,
-    name: '中国主要矿物成分分析',
-    description: '中国境内主要矿物的化学成分、物理性质、分布区域统计',
-    category: '矿物成分',
-    type: 'CSV',
-    rows: 342,
-    columns: 8,
-    size: 125000,
-    updateTime: '2025-11-08 14:20:00'
-  },
-  {
-    id: 3,
-    name: '板块运动监测数据',
-    description: '2020-2025年全球主要板块运动监测数据，包括位移、速度、方向',
-    category: '板块运动',
-    type: 'JSON',
-    rows: 2580,
-    columns: 15,
-    size: 1850000,
-    updateTime: '2025-11-07 09:15:00'
-  },
-  {
-    id: 4,
-    name: '地貌特征分类表',
-    description: '按照地貌形态、成因、分布等特征进行的详细分类统计',
-    category: '地貌特征',
-    type: 'Excel',
-    rows: 89,
-    columns: 10,
-    size: 325000,
-    updateTime: '2025-11-06 16:45:00'
-  },
-  {
-    id: 5,
-    name: '地震历史记录数据库',
-    description: '近100年来全球重大地震事件记录，包括震级、深度、伤亡等信息',
-    category: '地质数据',
-    type: 'CSV',
-    rows: 1256,
-    columns: 18,
-    size: 985000,
-    updateTime: '2025-11-05 11:20:00'
-  },
-]);
+// 获取后端地址
+const BACKEND_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+
+// 获取图片URL（处理相对路径）
+const getImageUrl = (url: string): string => {
+  if (!url) return '';
+  // 如果已经是完整URL，直接返回
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url;
+  }
+  // 如果是相对路径，拼接后端地址
+  if (url.startsWith('/')) {
+    return `${BACKEND_BASE_URL}${url}`;
+  }
+  return `${BACKEND_BASE_URL}/${url}`;
+};
+
+// 处理图片加载错误
+const handleImageError = (event: Event) => {
+  const img = event.target as HTMLImageElement;
+  img.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2YzZjRmNiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM5Y2EzYWYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj7lm77niYfliqDovb3lpLHotKU8L3RleHQ+PC9zdmc+';
+};
+
+// 所有表格数据
+const allTables = ref<TableData[]>([]);
+
+// 加载书籍列表
+const loadBooks = async () => {
+  try {
+    const response = await bookApi.getAllBooks();
+    books.value = response.books || [];
+  } catch (error: any) {
+    console.error('加载书籍列表失败:', error);
+    ElMessage.error('加载书籍列表失败: ' + (error.message || '未知错误'));
+  }
+};
+
+// 加载表格数据
+const loadTables = async () => {
+  if (selectedBookId.value === undefined) {
+    allTables.value = [];
+    return;
+  }
+
+  loading.value = true;
+  try {
+    // 1. 获取所有表格文件夹
+    const folderSearchResult = await fileApi.searchFiles({
+      keyword: '',
+      fileType: 'table_folder',
+      bookId: selectedBookId.value,
+      page: 1,
+      size: 1000,  // 获取所有文件夹
+    });
+
+    const tableFolders = folderSearchResult.files || [];
+    console.log('找到表格文件夹:', tableFolders);
+
+    // 2. 对于每个文件夹，获取其中的表格列表
+    const allTablesList: TableData[] = [];
+    
+    for (const folder of tableFolders) {
+      const property = folder.property as string;
+      if (!property) continue;
+
+      try {
+        const folderData = await fileApi.getTableFolder(property, selectedBookId.value);
+        const tables = folderData.tables || [];
+        
+        // 将表格添加到列表（表格以图片形式存在）
+        tables.forEach((table, index) => {
+          const fileExtension = table.name.split('.').pop()?.toLowerCase() || '';
+          // 表格实际上是图片，根据文件扩展名判断类型
+          let fileType = 'Image';
+          if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(fileExtension)) {
+            fileType = 'Image';
+          } else if (['xlsx', 'xls'].includes(fileExtension)) {
+            fileType = 'Excel';
+          } else if (fileExtension === 'csv') {
+            fileType = 'CSV';
+          }
+
+          allTablesList.push({
+            id: `${property}_${table.name}_${index}`,  // 唯一ID
+            name: table.name,
+            folderName: property,
+            property: property,
+            type: fileType,
+            size: table.size,
+            lastModified: table.lastModified,
+            url: table.url,
+            bookId: selectedBookId.value,
+          });
+        });
+      } catch (error: any) {
+        console.warn(`加载文件夹 ${property} 的表格失败:`, error);
+        // 继续处理其他文件夹
+      }
+    }
+
+    allTables.value = allTablesList;
+    console.log('加载的表格总数:', allTables.value.length);
+  } catch (error: any) {
+    console.error('加载表格失败:', error);
+    ElMessage.error('加载表格失败: ' + (error.message || '未知错误'));
+    allTables.value = [];
+  } finally {
+    loading.value = false;
+  }
+};
+
+// 书籍选择变化
+const handleBookChange = () => {
+  currentPage.value = 1;
+  loadTables();
+};
 
 // 过滤表格
 const filteredTables = computed(() => {
-  let result = tables.value;
+  let result = allTables.value;
   
   if (searchKeyword.value) {
     result = result.filter(table => 
       table.name.toLowerCase().includes(searchKeyword.value.toLowerCase()) ||
-      table.description.toLowerCase().includes(searchKeyword.value.toLowerCase())
+      table.folderName.toLowerCase().includes(searchKeyword.value.toLowerCase())
     );
-  }
-  
-  if (categoryFilter.value) {
-    result = result.filter(table => table.category === categoryFilter.value);
-  }
-  
-  if (typeFilter.value) {
-    result = result.filter(table => table.type === typeFilter.value);
   }
   
   return result;
@@ -329,6 +371,12 @@ const filteredTables = computed(() => {
 // 分页计算
 const totalTables = computed(() => filteredTables.value.length);
 const totalPages = computed(() => Math.ceil(totalTables.value / pageSize.value));
+const paginatedTables = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value;
+  const end = start + pageSize.value;
+  return filteredTables.value.slice(start, end);
+});
+
 const visiblePages = computed(() => {
   const pages = [];
   const maxVisible = 5;
@@ -347,9 +395,9 @@ const visiblePages = computed(() => {
 });
 
 // 选择相关
-const isSelected = (id: number) => selectedTables.value.includes(id);
+const isSelected = (id: string) => selectedTables.value.includes(id);
 
-const toggleSelect = (id: number) => {
+const toggleSelect = (id: string) => {
   const index = selectedTables.value.indexOf(id);
   if (index > -1) {
     selectedTables.value.splice(index, 1);
@@ -363,14 +411,11 @@ const handleSearch = () => {
   currentPage.value = 1;
 };
 
-const handleFilter = () => {
-  currentPage.value = 1;
-};
-
 // 分页
 const goToPage = (page: number) => {
   if (page >= 1 && page <= totalPages.value) {
     currentPage.value = page;
+    jumpPage.value = page;
   }
 };
 
@@ -389,33 +434,40 @@ const handleImport = () => {
   ElMessage.info('导入功能开发中...');
 };
 
-const handleCreate = () => {
-  ElMessage.info('新建功能开发中...');
-};
-
-const viewTable = (table: TableData) => {
+const viewTable = async (table: TableData) => {
   previewTableData.value = table;
   showPreview.value = true;
+  previewLoading.value = false; // 图片预览不需要加载，直接显示
+  previewError.value = null;
 };
 
 const closePreview = () => {
   showPreview.value = false;
   previewTableData.value = null;
+  previewError.value = null;
 };
 
-const downloadTable = (table: TableData | null) => {
-  if (table) {
-    ElMessage.success(`下载 ${table.name}`);
+const downloadTable = async (table: TableData | null) => {
+  if (!table) return;
+  
+  try {
+    const blob = await fileApi.downloadFile(table.property, 'tables', table.name);
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = table.name;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+    ElMessage.success(`下载 ${table.name} 成功`);
+  } catch (error: any) {
+    console.error('下载表格失败:', error);
+    ElMessage.error('下载失败: ' + (error.message || '未知错误'));
   }
 };
 
-const editTable = (table: TableData | null) => {
-  if (table) {
-    ElMessage.info(`编辑 ${table.name}`);
-  }
-};
-
-const deleteTable = async (id: number) => {
+const deleteTable = async (table: TableData) => {
   try {
     await ElMessageBox.confirm('确定要删除这个表格吗？', '确认删除', {
       confirmButtonText: '确定',
@@ -423,7 +475,7 @@ const deleteTable = async (id: number) => {
       type: 'warning',
     });
     ElMessage.success('删除成功');
-    tables.value = tables.value.filter(table => table.id !== id);
+    allTables.value = allTables.value.filter(t => t.id !== table.id);
   } catch {
     // 用户取消
   }
@@ -443,7 +495,7 @@ const batchDelete = async () => {
       }
     );
     ElMessage.success(`成功删除 ${selectedTables.value.length} 个表格`);
-    tables.value = tables.value.filter(table => !selectedTables.value.includes(table.id));
+    allTables.value = allTables.value.filter(table => !selectedTables.value.includes(table.id));
     selectedTables.value = [];
   } catch {
     // 用户取消
@@ -453,6 +505,7 @@ const batchDelete = async () => {
 // 工具函数
 const getTableIcon = (type: string) => {
   const icons: Record<string, string> = {
+    'Image': '🖼️',
     'Excel': '📊',
     'CSV': '📋',
     'JSON': '📄'
@@ -461,13 +514,15 @@ const getTableIcon = (type: string) => {
 };
 
 const formatSize = (bytes: number) => {
+  if (!bytes || bytes === 0) return '未知大小';
   if (bytes < 1024) return bytes + ' B';
   if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
   return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
 };
 
-const formatDate = (dateString: string) => {
-  const date = new Date(dateString);
+const formatDate = (timestamp: number) => {
+  if (!timestamp) return '未知时间';
+  const date = new Date(timestamp);
   return date.toLocaleString('zh-CN', {
     year: 'numeric',
     month: '2-digit',
@@ -476,6 +531,16 @@ const formatDate = (dateString: string) => {
     minute: '2-digit'
   });
 };
+
+// 初始化
+onMounted(async () => {
+  await loadBooks();
+  // 默认选择第一本书
+  if (books.value.length > 0) {
+    selectedBookId.value = books.value[0].id;
+    await loadTables();
+  }
+});
 </script>
 
 <style scoped>
@@ -509,6 +574,21 @@ const formatDate = (dateString: string) => {
   flex-wrap: wrap;
 }
 
+.book-select {
+  padding: 10px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.book-select:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
 .action-btn {
   display: flex;
   align-items: center;
@@ -530,15 +610,6 @@ const formatDate = (dateString: string) => {
 .btn-import:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
-}
-
-.btn-create {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-}
-
-.btn-create:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
 }
 
 .search-wrapper {
@@ -572,21 +643,6 @@ const formatDate = (dateString: string) => {
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
-.filter-select {
-  padding: 10px 16px;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  font-size: 14px;
-  background: white;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.filter-select:focus {
-  outline: none;
-  border-color: #667eea;
-}
-
 .toolbar-right {
   display: flex;
   gap: 12px;
@@ -613,6 +669,35 @@ const formatDate = (dateString: string) => {
 .delete-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* 加载状态 */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  min-height: 400px;
+}
+
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid #e5e7eb;
+  border-top-color: #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-state p {
+  color: #6b7280;
+  font-size: 14px;
 }
 
 /* 表格网格 */
@@ -666,6 +751,10 @@ const formatDate = (dateString: string) => {
   justify-content: center;
   font-size: 24px;
   flex-shrink: 0;
+}
+
+.card-icon.icon-Image {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
 }
 
 .card-icon.icon-Excel {
@@ -724,11 +813,6 @@ const formatDate = (dateString: string) => {
   color: #6b7280;
   margin: 0 0 16px 0;
   line-height: 1.5;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
 }
 
 .table-stats {
@@ -763,11 +847,16 @@ const formatDate = (dateString: string) => {
   flex-wrap: wrap;
 }
 
-.type-badge, .category-badge {
+.type-badge {
   padding: 4px 10px;
   border-radius: 12px;
   font-size: 11px;
   font-weight: 500;
+}
+
+.type-badge.type-Image {
+  background: #f3e8ff;
+  color: #7c3aed;
 }
 
 .type-badge.type-Excel {
@@ -783,11 +872,6 @@ const formatDate = (dateString: string) => {
 .type-badge.type-JSON {
   background: #fef3c7;
   color: #b45309;
-}
-
-.category-badge {
-  background: #f3f4f6;
-  color: #6b7280;
 }
 
 .footer-right {
@@ -958,11 +1042,14 @@ const formatDate = (dateString: string) => {
 
 .preview-content {
   width: 90%;
-  max-width: 600px;
+  max-width: 900px;
+  max-height: 90vh;
   background: white;
   border-radius: 16px;
   overflow: hidden;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
 }
 
 .preview-header {
@@ -971,6 +1058,7 @@ const formatDate = (dateString: string) => {
   align-items: center;
   padding: 24px;
   border-bottom: 1px solid #e5e7eb;
+  flex-shrink: 0;
 }
 
 .preview-header h3 {
@@ -979,6 +1067,9 @@ const formatDate = (dateString: string) => {
   color: #1f2937;
   flex: 1;
   padding-right: 20px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .preview-close {
@@ -1000,6 +1091,41 @@ const formatDate = (dateString: string) => {
 
 .preview-body {
   padding: 24px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.preview-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+}
+
+.spinner-small {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+.preview-loading p {
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.preview-error {
+  text-align: center;
+  padding: 40px 20px;
+  color: #ef4444;
+}
+
+.preview-error p {
+  margin-bottom: 20px;
 }
 
 .preview-info-section {
@@ -1026,26 +1152,94 @@ const formatDate = (dateString: string) => {
   color: #1f2937;
 }
 
-.preview-description {
+.table-preview-section {
   margin-bottom: 24px;
 }
 
-.preview-description h4 {
+.table-preview-section h4 {
   font-size: 15px;
   color: #374151;
-  margin: 0 0 12px 0;
+  margin: 0 0 16px 0;
 }
 
-.preview-description p {
-  font-size: 14px;
-  color: #6b7280;
-  line-height: 1.6;
+.table-container {
+  max-height: 400px;
+  overflow: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.preview-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.preview-table thead {
+  background: #f9fafb;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.preview-table th {
+  padding: 12px;
+  text-align: left;
+  font-weight: 600;
+  color: #374151;
+  border-bottom: 2px solid #e5e7eb;
+  white-space: nowrap;
+}
+
+.preview-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #f3f4f6;
+  color: #4b5563;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.preview-table tbody tr:hover {
+  background: #f9fafb;
+}
+
+.preview-note {
+  margin-top: 12px;
+  padding: 12px;
+  background: #fef3c7;
+  border-left: 4px solid #f59e0b;
+  border-radius: 4px;
+}
+
+.preview-note p {
   margin: 0;
+  font-size: 13px;
+  color: #b45309;
+}
+
+.preview-image-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+.preview-image {
+  max-width: 100%;
+  max-height: 60vh;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .preview-actions {
   display: flex;
   gap: 12px;
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid #e5e7eb;
 }
 
 .preview-action-btn {
@@ -1071,15 +1265,6 @@ const formatDate = (dateString: string) => {
 .btn-download:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
-}
-
-.btn-edit {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-}
-
-.btn-edit:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
 }
 
 /* 响应式 */
@@ -1120,6 +1305,11 @@ const formatDate = (dateString: string) => {
   .preview-info-section {
     grid-template-columns: 1fr;
   }
+  
+  .preview-content {
+    width: 95%;
+    max-height: 95vh;
+  }
 }
 
 @keyframes fadeIn {
@@ -1131,4 +1321,3 @@ const formatDate = (dateString: string) => {
   }
 }
 </style>
-

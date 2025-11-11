@@ -6,9 +6,20 @@
 // 开发环境使用代理，避免 CORS 问题
 // 生产环境需要配置后端服务器代理或使用服务端调用
 const isDevelopment = import.meta.env.DEV;
+
+// 获取后端地址（从环境变量或使用默认值）
+const BACKEND_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+
 const MINERU_API_BASE = isDevelopment 
-  ? '/api/mineru'  // 开发环境通过 Vite 代理
-  : 'https://mineru.net/api/v4';  // 生产环境（需要后端代理）
+  ? '/api/mineru'  // 开发环境通过 Vite 代理到后端
+  : `${BACKEND_BASE_URL}/api/mineru`;  // 生产环境直接调用后端代理
+
+console.log('🔧 MinerU API 配置:', {
+  isDevelopment,
+  MINERU_API_BASE,
+  BACKEND_BASE_URL,
+  env: import.meta.env.MODE
+});
 
 const API_TOKEN = 'eyJ0eXBlIjoiSldUIiwiYWxnIjoiSFM1MTIifQ.eyJqdGkiOiI1MDEwOTU0OCIsInJvbCI6IlJPTEVfUkVHSVNURVIiLCJpc3MiOiJPcGVuWExhYiIsImlhdCI6MTc2MjQ4Mjk2MSwiY2xpZW50SWQiOiJsa3pkeDU3bnZ5MjJqa3BxOXgydyIsInBob25lIjoiMTM5NjY5MTQ0MjciLCJvcGVuSWQiOm51bGwsInV1aWQiOiI0NDNlNTZjNi1hZTJkLTQ3NzQtODI5OC1jYTlkZTM2ZmUxYzEiLCJlbWFpbCI6IiIsImV4cCI6MTc2MzY5MjU2MX0.YuiQpcmfgZ9BsYm2qjq_ys3SiML-cx3lbuGpcb9fOJANSME68TuzIhI-j5l5MbR4fTpOhlKYMKpJ5-supq8X_g';
 
@@ -43,6 +54,12 @@ export interface CreateTaskResponse {
 }
 
 export const createExtractTask = async (params: CreateTaskParams): Promise<CreateTaskResponse> => {
+  console.log('📤 调用 createExtractTask:', {
+    url: `${MINERU_API_BASE}/extract/task`,
+    params,
+    isDevelopment
+  });
+
   const response = await fetch(`${MINERU_API_BASE}/extract/task`, {
     method: 'POST',
     headers: getHeaders(),
@@ -53,10 +70,18 @@ export const createExtractTask = async (params: CreateTaskParams): Promise<Creat
   });
 
   if (!response.ok) {
-    throw new Error(`API请求失败: ${response.status}`);
+    const errorText = await response.text();
+    console.error('❌ API请求失败:', {
+      status: response.status,
+      statusText: response.statusText,
+      error: errorText
+    });
+    throw new Error(`API请求失败: ${response.status} - ${errorText}`);
   }
 
-  return await response.json();
+  const result = await response.json();
+  console.log('✅ API请求成功:', result);
+  return result;
 };
 
 /**
@@ -295,10 +320,167 @@ export const pollBatchTaskUntilComplete = async (
 };
 
 /**
+ * 阶段一：上传文件到后端
+ */
+export interface UploadFileResponse {
+  success: boolean;
+  message: string;
+  data: {
+    fileId: string;
+    fileName: string;
+    fileSize: number;
+    filePath: string;
+    savedFilename: string;
+  };
+}
+
+export const uploadFile = async (file: File): Promise<UploadFileResponse> => {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const url = `${MINERU_API_BASE}/upload`;
+  console.log('📤 调用 uploadFile:', {
+    url,
+    fileName: file.name,
+    fileSize: file.size,
+    isDevelopment
+  });
+
+  const response = await fetch(url, {
+    method: 'POST',
+    body: formData
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    let errorData;
+    try {
+      errorData = JSON.parse(errorText);
+    } catch {
+      errorData = { message: '上传失败', detail: errorText };
+    }
+    
+    console.error('❌ 文件上传失败:', {
+      status: response.status,
+      statusText: response.statusText,
+      error: errorData,
+      errorText
+    });
+    
+    throw new Error(errorData.message || errorData.detail || `上传失败: ${response.status}`);
+  }
+
+  const result = await response.json();
+  console.log('✅ 文件上传成功:', result);
+  return result;
+};
+
+/**
+ * 阶段二：触发解析（传入文件ID）
+ */
+export interface ParseDocumentParams {
+  model_version?: 'pipeline' | 'vlm';
+  enable_formula?: boolean;
+  enable_table?: boolean;
+  language?: string;
+}
+
+export interface ParseDocumentResponse {
+  success: boolean;
+  message: string;
+  data: {
+    state: string;
+    full_zip_url?: string;
+    batchId?: string;
+    markdownPath?: string;
+  };
+}
+
+export const parseDocument = async (
+  fileId: string,
+  params: ParseDocumentParams = {}
+): Promise<ParseDocumentResponse> => {
+  const queryParams = new URLSearchParams();
+  queryParams.append('model_version', params.model_version || 'vlm');
+  queryParams.append('enable_formula', String(params.enable_formula !== false));
+  queryParams.append('enable_table', String(params.enable_table !== false));
+  queryParams.append('language', params.language || 'ch');
+
+  const url = `${MINERU_API_BASE}/parse/${fileId}?${queryParams}`;
+  console.log('📤 调用 parseDocument:', {
+    url,
+    fileId,
+    params,
+    isDevelopment
+  });
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    let errorData;
+    try {
+      errorData = JSON.parse(errorText);
+    } catch {
+      errorData = { message: '解析失败', detail: errorText };
+    }
+    
+    const errorMessage = errorData.message || `解析失败: ${response.status}`;
+    const errorDetail = errorData.detail || '';
+    
+    console.error('❌ 解析文档失败:', {
+      status: response.status,
+      statusText: response.statusText,
+      message: errorMessage,
+      detail: errorDetail,
+      fullError: errorData,
+      errorText
+    });
+    
+    throw new Error(errorDetail ? `${errorMessage}: ${errorDetail}` : errorMessage);
+  }
+
+  const result = await response.json();
+  console.log('✅ 解析文档成功:', result);
+  return result;
+};
+
+/**
+ * 阶段三：获取Markdown内容
+ */
+export interface MarkdownContentResponse {
+  success: boolean;
+  data: {
+    content: string;
+  };
+}
+
+export const getMarkdownContent = async (fileId: string): Promise<MarkdownContentResponse> => {
+  const response = await fetch(`${MINERU_API_BASE}/markdown/${fileId}`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ message: '获取Markdown内容失败' }));
+    throw new Error(errorData.message || `获取Markdown内容失败: ${response.status}`);
+  }
+
+  return await response.json();
+};
+
+/**
  * 错误码解释
  */
-export const getErrorMessage = (code: number): string => {
-  const errorMap: { [key: number]: string } = {
+export const getErrorMessage = (code: number | string): string => {
+  const errorMap: { [key: string]: string } = {
     'A0202': 'Token错误，请检查API配置',
     'A0211': 'Token已过期，请更新Token',
     '-500': '传参错误，请检查参数',
@@ -322,6 +504,7 @@ export const getErrorMessage = (code: number): string => {
     '-60016': '文件转换为指定格式失败，可以尝试其他格式'
   };
 
-  return errorMap[code] || `未知错误 (${code})`;
+  const codeStr = String(code);
+  return errorMap[codeStr] || `未知错误 (${code})`;
 };
 

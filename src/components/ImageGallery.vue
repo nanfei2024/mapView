@@ -4,6 +4,12 @@
       <!-- 工具栏 -->
       <div class="toolbar">
         <div class="toolbar-left">
+          <select v-model="selectedBookId" class="book-select" @change="handleBookChange">
+            <option :value="undefined">所有书籍</option>
+            <option v-for="book in books" :key="book.id" :value="book.id">
+              {{ book.title || book.name }}
+            </option>
+          </select>
           <button class="action-btn btn-upload" @click="handleUpload">
             <span class="btn-icon">📤</span>
             <span>上传图片</span>
@@ -18,14 +24,6 @@
               @input="handleSearch"
             />
           </div>
-          <select v-model="categoryFilter" class="filter-select" @change="handleFilter">
-            <option value="">全部分类</option>
-            <option value="地貌">地貌图片</option>
-            <option value="地质">地质图片</option>
-            <option value="矿物">矿物图片</option>
-            <option value="化石">化石图片</option>
-            <option value="其他">其他</option>
-          </select>
         </div>
         <div class="toolbar-right">
           <div class="view-switcher">
@@ -57,9 +55,15 @@
         </div>
       </div>
 
+      <!-- 加载状态 -->
+      <div v-if="loading" class="loading-state">
+        <div class="spinner"></div>
+        <p>加载中...</p>
+      </div>
+
       <!-- 图片网格视图 -->
-      <div v-if="viewMode === 'grid'" class="image-grid">
-        <div v-if="filteredImages.length === 0" class="empty-state">
+      <div v-else-if="viewMode === 'grid'" class="image-grid">
+        <div v-if="allImages.length === 0" class="empty-state">
           <span class="empty-icon">🖼️</span>
           <p>暂无图片</p>
           <button class="empty-action-btn" @click="handleUpload">
@@ -68,7 +72,7 @@
           </button>
         </div>
         <div 
-          v-for="image in filteredImages" 
+          v-for="image in paginatedImages" 
           :key="image.id"
           class="image-card"
           :class="{ selected: isSelected(image.id) }"
@@ -81,7 +85,7 @@
             />
           </div>
           <div class="image-preview" @click="previewImage(image)">
-            <img :src="image.url" :alt="image.name" />
+            <img :src="getImageUrl(image.url)" :alt="image.name" @error="handleImageError" />
             <div class="image-overlay">
               <button class="overlay-btn" @click.stop="previewImage(image)">
                 👁️ 预览
@@ -94,15 +98,17 @@
           <div class="image-info">
             <h4 class="image-name" :title="image.name">{{ image.name }}</h4>
             <div class="image-meta">
-              <span class="meta-item">{{ image.category }}</span>
-              <span class="meta-item">{{ formatSize(image.size) }}</span>
+              <span class="meta-item">{{ image.folderName || '未知文件夹' }}</span>
+              <span v-if="image.size" class="meta-item">{{ formatSize(image.size) }}</span>
             </div>
-            <div class="image-date">{{ formatDate(image.uploadTime) }}</div>
             <div class="image-actions">
-              <button class="action-icon-btn" @click="editImage(image)" title="编辑">
-                ✏️
+              <button class="action-icon-btn" @click="previewImage(image)" title="预览">
+                👁️
               </button>
-              <button class="action-icon-btn" @click="deleteImage(image.id)" title="删除">
+              <button class="action-icon-btn" @click="downloadImage(image)" title="下载">
+                ⬇️
+              </button>
+              <button class="action-icon-btn" @click="deleteImage(image)" title="删除">
                 🗑️
               </button>
             </div>
@@ -111,7 +117,7 @@
       </div>
 
       <!-- 图片列表视图 -->
-      <div v-if="viewMode === 'list'" class="image-list">
+      <div v-else-if="viewMode === 'list'" class="image-list">
         <table class="list-table">
           <thead>
             <tr>
@@ -120,15 +126,14 @@
               </th>
               <th class="col-preview">预览</th>
               <th class="col-name">图片名称</th>
-              <th class="col-category">分类</th>
+              <th class="col-folder">所属文件夹</th>
               <th class="col-size">大小</th>
-              <th class="col-date">上传时间</th>
               <th class="col-actions">操作</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-if="filteredImages.length === 0">
-              <td colspan="7" class="empty-row">
+            <tr v-if="allImages.length === 0">
+              <td colspan="6" class="empty-row">
                 <div class="empty-state-inline">
                   <span class="empty-icon">🖼️</span>
                   <p>暂无图片</p>
@@ -136,7 +141,7 @@
               </td>
             </tr>
             <tr 
-              v-for="image in filteredImages" 
+              v-for="image in paginatedImages" 
               :key="image.id"
               class="list-row"
               :class="{ selected: isSelected(image.id) }"
@@ -150,7 +155,7 @@
               </td>
               <td class="col-preview">
                 <div class="preview-thumbnail" @click="previewImage(image)">
-                  <img :src="image.url" :alt="image.name" />
+                  <img :src="getImageUrl(image.url)" :alt="image.name" @error="handleImageError" />
                 </div>
               </td>
               <td class="col-name">
@@ -159,19 +164,15 @@
                   <span class="name-text" :title="image.name">{{ image.name }}</span>
                 </div>
               </td>
-              <td class="col-category">
-                <span class="category-badge" :class="'category-' + image.category">
-                  {{ image.category }}
-                </span>
+              <td class="col-folder">
+                <span class="folder-badge">{{ image.folderName || '未知' }}</span>
               </td>
-              <td class="col-size">{{ formatSize(image.size) }}</td>
-              <td class="col-date">{{ formatDate(image.uploadTime) }}</td>
+              <td class="col-size">{{ image.size ? formatSize(image.size) : '--' }}</td>
               <td class="col-actions">
                 <div class="action-buttons">
                   <button class="action-icon-btn" @click="previewImage(image)" title="预览">👁️</button>
                   <button class="action-icon-btn" @click="downloadImage(image)" title="下载">⬇️</button>
-                  <button class="action-icon-btn" @click="editImage(image)" title="编辑">✏️</button>
-                  <button class="action-icon-btn" @click="deleteImage(image.id)" title="删除">🗑️</button>
+                  <button class="action-icon-btn" @click="deleteImage(image)" title="删除">🗑️</button>
                 </div>
               </td>
             </tr>
@@ -182,7 +183,7 @@
       <!-- 分页 -->
       <div class="pagination" v-if="totalPages > 1">
         <div class="pagination-info">
-          <span>共 {{ totalImages }} 张图片</span>
+          <span>共 {{ allImages.length }} 张图片</span>
           <select v-model="pageSize" class="page-size-select" @change="handlePageSizeChange">
             <option :value="12">12/page</option>
             <option :value="24">24/page</option>
@@ -223,10 +224,10 @@
     <div v-if="showPreview" class="preview-modal" @click="closePreview">
       <div class="preview-content" @click.stop>
         <button class="preview-close" @click="closePreview">✕</button>
-        <img :src="previewImageData?.url" :alt="previewImageData?.name" />
+        <img :src="getImageUrl(previewImageData?.url)" :alt="previewImageData?.name" @error="handleImageError" />
         <div class="preview-info">
           <h3>{{ previewImageData?.name }}</h3>
-          <p>{{ previewImageData?.category }} · {{ formatSize(previewImageData?.size) }}</p>
+          <p>{{ previewImageData?.folderName || '未知文件夹' }} · {{ previewImageData?.size ? formatSize(previewImageData.size) : '未知大小' }}</p>
         </div>
       </div>
     </div>
@@ -234,70 +235,147 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
+import { fileApi, type FileItem } from '../api/fileApi';
+import { bookApi, type Book } from '../api/bookApi';
 
 // 图片数据接口
 interface ImageData {
-  id: number;
+  id: string;  // 使用 property_name 作为唯一ID
   name: string;
   url: string;
-  category: string;
-  size: number;
-  uploadTime: string;
+  folderName: string;  // 章节属性（如 "1.1"）
+  property: string;
+  size?: number;
+  bookId?: number;
 }
 
 // 状态管理
+const loading = ref(false);
+const books = ref<Book[]>([]);
+const selectedBookId = ref<number | undefined>(undefined);
 const searchKeyword = ref('');
-const categoryFilter = ref('');
 const viewMode = ref<'grid' | 'list'>('grid');
-const selectedImages = ref<number[]>([]);
+const selectedImages = ref<string[]>([]);
 const currentPage = ref(1);
 const pageSize = ref(12);
 const jumpPage = ref(1);
 const showPreview = ref(false);
 const previewImageData = ref<ImageData | null>(null);
 
-// 模拟图片数据
-const images = ref<ImageData[]>([
-  {
-    id: 1,
-    name: '亚洲地貌圈及其板块造貌构造纲要.jpg',
-    url: '/images/亚洲地貌圈及其板块造貌构造纲要.jpg',
-    category: '地貌',
-    size: 2548000,
-    uploadTime: '2025-11-09 10:30:00'
-  },
-  {
-    id: 2,
-    name: '板块构造与地貌形迹.jpg',
-    url: '/images/板块构造与地貌形迹.jpg',
-    category: '地质',
-    size: 1850000,
-    uploadTime: '2025-11-08 14:20:00'
-  },
-  {
-    id: 3,
-    name: '地学新两论上篇.jpg',
-    url: '/images/地学新两论 上篇 板块造貌构造学-兼论板块学说新发展.jpg',
-    category: '地质',
-    size: 3200000,
-    uploadTime: '2025-11-07 09:15:00'
-  },
-]);
+// 所有图片数据
+const allImages = ref<ImageData[]>([]);
+
+// 获取后端地址
+const BACKEND_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+
+// 获取图片URL（处理相对路径）
+const getImageUrl = (url: string): string => {
+  if (!url) return '';
+  // 如果已经是完整URL，直接返回
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url;
+  }
+  // 如果是相对路径，拼接后端地址
+  if (url.startsWith('/')) {
+    return `${BACKEND_BASE_URL}${url}`;
+  }
+  return `${BACKEND_BASE_URL}/${url}`;
+};
+
+// 处理图片加载错误
+const handleImageError = (event: Event) => {
+  const img = event.target as HTMLImageElement;
+  img.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2YzZjRmNiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM5Y2EzYWYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj7lm77niYfliqDovb3lpLHotKU8L3RleHQ+PC9zdmc+';
+};
+
+// 加载书籍列表
+const loadBooks = async () => {
+  try {
+    const response = await bookApi.getAllBooks();
+    books.value = response.books || [];
+  } catch (error: any) {
+    console.error('加载书籍列表失败:', error);
+    ElMessage.error('加载书籍列表失败: ' + (error.message || '未知错误'));
+  }
+};
+
+// 加载图片数据
+const loadImages = async () => {
+  if (selectedBookId.value === undefined) {
+    allImages.value = [];
+    return;
+  }
+
+  loading.value = true;
+  try {
+    // 1. 获取所有图片文件夹
+    const folderSearchResult = await fileApi.searchFiles({
+      keyword: '',
+      fileType: 'img_folder',
+      bookId: selectedBookId.value,
+      page: 1,
+      size: 1000,  // 获取所有文件夹
+    });
+
+    const imageFolders = folderSearchResult.files || [];
+    console.log('找到图片文件夹:', imageFolders);
+
+    // 2. 对于每个文件夹，获取其中的图片列表
+    const allImagesList: ImageData[] = [];
+    
+    for (const folder of imageFolders) {
+      const property = folder.property as string;
+      if (!property) continue;
+
+      try {
+        const folderData = await fileApi.getImageFolder(property, selectedBookId.value);
+        const images = folderData.images || [];
+        
+        // 将图片添加到列表
+        images.forEach((img, index) => {
+          allImagesList.push({
+            id: `${property}_${img.name}_${index}`,  // 唯一ID
+            name: img.name,
+            url: img.url,
+            folderName: property,
+            property: property,
+            bookId: selectedBookId.value,
+          });
+        });
+      } catch (error: any) {
+        console.warn(`加载文件夹 ${property} 的图片失败:`, error);
+        // 继续处理其他文件夹
+      }
+    }
+
+    allImages.value = allImagesList;
+    console.log('加载的图片总数:', allImages.value.length);
+  } catch (error: any) {
+    console.error('加载图片失败:', error);
+    ElMessage.error('加载图片失败: ' + (error.message || '未知错误'));
+    allImages.value = [];
+  } finally {
+    loading.value = false;
+  }
+};
+
+// 书籍选择变化
+const handleBookChange = () => {
+  currentPage.value = 1;
+  loadImages();
+};
 
 // 过滤图片
 const filteredImages = computed(() => {
-  let result = images.value;
+  let result = allImages.value;
   
   if (searchKeyword.value) {
     result = result.filter(img => 
-      img.name.toLowerCase().includes(searchKeyword.value.toLowerCase())
+      img.name.toLowerCase().includes(searchKeyword.value.toLowerCase()) ||
+      img.folderName.toLowerCase().includes(searchKeyword.value.toLowerCase())
     );
-  }
-  
-  if (categoryFilter.value) {
-    result = result.filter(img => img.category === categoryFilter.value);
   }
   
   return result;
@@ -306,6 +384,12 @@ const filteredImages = computed(() => {
 // 分页计算
 const totalImages = computed(() => filteredImages.value.length);
 const totalPages = computed(() => Math.ceil(totalImages.value / pageSize.value));
+const paginatedImages = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value;
+  const end = start + pageSize.value;
+  return filteredImages.value.slice(start, end);
+});
+
 const visiblePages = computed(() => {
   const pages = [];
   const maxVisible = 5;
@@ -324,12 +408,12 @@ const visiblePages = computed(() => {
 });
 
 // 选择相关
-const isSelected = (id: number) => selectedImages.value.includes(id);
+const isSelected = (id: string) => selectedImages.value.includes(id);
 const isAllSelected = computed(() => 
   filteredImages.value.length > 0 && selectedImages.value.length === filteredImages.value.length
 );
 
-const toggleSelect = (id: number) => {
+const toggleSelect = (id: string) => {
   const index = selectedImages.value.indexOf(id);
   if (index > -1) {
     selectedImages.value.splice(index, 1);
@@ -351,14 +435,11 @@ const handleSearch = () => {
   currentPage.value = 1;
 };
 
-const handleFilter = () => {
-  currentPage.value = 1;
-};
-
 // 分页
 const goToPage = (page: number) => {
   if (page >= 1 && page <= totalPages.value) {
     currentPage.value = page;
+    jumpPage.value = page;
   }
 };
 
@@ -387,15 +468,25 @@ const closePreview = () => {
   previewImageData.value = null;
 };
 
-const downloadImage = (image: ImageData) => {
-  ElMessage.success(`下载 ${image.name}`);
+const downloadImage = async (image: ImageData) => {
+  try {
+    const blob = await fileApi.downloadFile(image.property, 'images', image.name);
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = image.name;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+    ElMessage.success(`下载 ${image.name} 成功`);
+  } catch (error: any) {
+    console.error('下载图片失败:', error);
+    ElMessage.error('下载失败: ' + (error.message || '未知错误'));
+  }
 };
 
-const editImage = (image: ImageData) => {
-  ElMessage.info(`编辑 ${image.name}`);
-};
-
-const deleteImage = async (id: number) => {
+const deleteImage = async (image: ImageData) => {
   try {
     await ElMessageBox.confirm('确定要删除这张图片吗？', '确认删除', {
       confirmButtonText: '确定',
@@ -403,7 +494,7 @@ const deleteImage = async (id: number) => {
       type: 'warning',
     });
     ElMessage.success('删除成功');
-    images.value = images.value.filter(img => img.id !== id);
+    allImages.value = allImages.value.filter(img => img.id !== image.id);
   } catch {
     // 用户取消
   }
@@ -423,7 +514,7 @@ const batchDelete = async () => {
       }
     );
     ElMessage.success(`成功删除 ${selectedImages.value.length} 张图片`);
-    images.value = images.value.filter(img => !selectedImages.value.includes(img.id));
+    allImages.value = allImages.value.filter(img => !selectedImages.value.includes(img.id));
     selectedImages.value = [];
   } catch {
     // 用户取消
@@ -432,21 +523,21 @@ const batchDelete = async () => {
 
 // 工具函数
 const formatSize = (bytes: number) => {
+  if (!bytes || bytes === 0) return '未知大小';
   if (bytes < 1024) return bytes + ' B';
   if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
   return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
 };
 
-const formatDate = (dateString: string) => {
-  const date = new Date(dateString);
-  return date.toLocaleString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
-};
+// 初始化
+onMounted(async () => {
+  await loadBooks();
+  // 默认选择第一本书
+  if (books.value.length > 0) {
+    selectedBookId.value = books.value[0].id;
+    await loadImages();
+  }
+});
 </script>
 
 <style scoped>
@@ -478,6 +569,21 @@ const formatDate = (dateString: string) => {
   gap: 12px;
   flex: 1;
   flex-wrap: wrap;
+}
+
+.book-select {
+  padding: 10px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.book-select:focus {
+  outline: none;
+  border-color: #667eea;
 }
 
 .action-btn {
@@ -531,21 +637,6 @@ const formatDate = (dateString: string) => {
   outline: none;
   border-color: #667eea;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-}
-
-.filter-select {
-  padding: 10px 16px;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  font-size: 14px;
-  background: white;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.filter-select:focus {
-  outline: none;
-  border-color: #667eea;
 }
 
 .toolbar-right {
@@ -604,6 +695,35 @@ const formatDate = (dateString: string) => {
 .delete-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* 加载状态 */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  min-height: 400px;
+}
+
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid #e5e7eb;
+  border-top-color: #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-state p {
+  color: #6b7280;
+  font-size: 14px;
 }
 
 /* 网格视图 */
@@ -718,7 +838,8 @@ const formatDate = (dateString: string) => {
 .image-meta {
   display: flex;
   gap: 12px;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
 }
 
 .meta-item {
@@ -727,12 +848,6 @@ const formatDate = (dateString: string) => {
   padding: 2px 8px;
   background: #f3f4f6;
   border-radius: 4px;
-}
-
-.image-date {
-  font-size: 12px;
-  color: #9ca3af;
-  margin-bottom: 12px;
 }
 
 .image-actions {
@@ -819,6 +934,7 @@ const formatDate = (dateString: string) => {
   overflow: hidden;
   cursor: pointer;
   transition: transform 0.2s ease;
+  background: #f3f4f6;
 }
 
 .preview-thumbnail:hover {
@@ -846,32 +962,14 @@ const formatDate = (dateString: string) => {
   color: #1f2937;
 }
 
-.category-badge {
+.folder-badge {
   display: inline-block;
   padding: 4px 12px;
+  background: #dbeafe;
+  color: #1e40af;
   border-radius: 12px;
   font-size: 12px;
   font-weight: 500;
-}
-
-.category-badge.category-地貌 {
-  background: #dbeafe;
-  color: #1e40af;
-}
-
-.category-badge.category-地质 {
-  background: #dcfce7;
-  color: #15803d;
-}
-
-.category-badge.category-矿物 {
-  background: #fef3c7;
-  color: #b45309;
-}
-
-.category-badge.category-化石 {
-  background: #fce7f3;
-  color: #be123c;
 }
 
 .action-buttons {
@@ -934,6 +1032,10 @@ const formatDate = (dateString: string) => {
 
 .empty-state-inline p {
   margin: 0;
+}
+
+.empty-row {
+  text-align: center;
 }
 
 /* 分页 */
@@ -1132,4 +1234,3 @@ const formatDate = (dateString: string) => {
   }
 }
 </style>
-

@@ -85,23 +85,26 @@
             <!-- Mozilla PDF.js 查看器 -->
             <iframe 
               v-if="pdfViewerType === 'mozilla'"
-              :src="`https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(originalFileUrl)}`" 
+              :src="getPdfViewerUrl(originalFileUrl, 'mozilla')" 
               frameborder="0"
               class="pdf-iframe"
+              @error="handlePdfViewerError"
             ></iframe>
             
             <!-- Google Docs 查看器 -->
             <iframe 
               v-else-if="pdfViewerType === 'google'"
-              :src="`https://docs.google.com/viewer?url=${encodeURIComponent(originalFileUrl)}&embedded=true`" 
+              :src="getPdfViewerUrl(originalFileUrl, 'google')" 
               frameborder="0"
               class="pdf-iframe"
+              @error="handlePdfViewerError"
             ></iframe>
             
             <!-- 直接预览 -->
             <iframe 
               v-else
-              :src="originalFileUrl" 
+              :src="getPdfViewerUrl(originalFileUrl, 'direct')"
+              @error="handlePdfViewerError" 
               frameborder="0"
               class="pdf-iframe"
             ></iframe>
@@ -213,24 +216,64 @@ const pdfViewerUrl = computed(() => {
   return originalFileUrl.value;
 });
 
+// 获取 PDF 查看器 URL（处理跨域问题）
+const getPdfViewerUrl = (url: string, type: 'mozilla' | 'google' | 'direct'): string => {
+  if (!url) return '';
+  
+  if (type === 'mozilla') {
+    // Mozilla PDF.js 查看器（可能遇到跨域问题）
+    // 如果遇到跨域问题，会回退到直接预览
+    return `https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(url)}`;
+  } else if (type === 'google') {
+    // Google Docs 查看器
+    return `https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`;
+  } else {
+    // 直接预览（使用浏览器内置 PDF 查看器）
+    return url;
+  }
+};
+
+// 处理 PDF 查看器错误
+const handlePdfViewerError = () => {
+  console.warn('PDF 查看器加载失败，可能是跨域问题');
+  pdfError.value = 'PDF 预览失败，可能是跨域限制。请尝试切换到"直接预览"或"下载 PDF"。';
+  // 自动切换到直接预览
+  if (pdfViewerType.value !== 'direct') {
+    pdfViewerType.value = 'direct';
+  }
+};
+
 // 初始化
 onMounted(async () => {
   // 从路由参数获取数据
   fileName.value = route.query.fileName as string || '未知文件';
   resultUrl.value = route.query.resultUrl as string || '';
   originalFileUrl.value = route.query.originalUrl as string || '';
+  const fileId = route.query.fileId as string || '';
+  const markdownFromQuery = route.query.markdownContent as string || '';
   
   console.log('📋 预览页面参数:', {
     fileName: fileName.value,
     resultUrl: resultUrl.value,
-    originalFileUrl: originalFileUrl.value
+    originalFileUrl: originalFileUrl.value,
+    fileId: fileId
   });
   
-  // 加载 Markdown 内容
-  if (resultUrl.value) {
+  // 优先使用路由参数中的 Markdown 内容
+  if (markdownFromQuery) {
+    console.log('✅ 使用路由参数中的 Markdown 内容');
+    markdownContent.value = markdownFromQuery;
+    loadingMarkdown.value = false;
+  } else if (fileId) {
+    // 如果有 fileId，从后端 API 获取 Markdown 内容
+    console.log('📥 从后端 API 获取 Markdown 内容: fileId=', fileId);
+    await loadMarkdownFromBackend(fileId);
+  } else if (resultUrl.value) {
+    // 否则尝试从 ZIP 文件加载（备用方案）
+    console.log('📥 从 ZIP 文件加载 Markdown 内容');
     await loadMarkdownFromZip();
   } else {
-    markdownError.value = '缺少解析结果 URL';
+    markdownError.value = '缺少解析结果 URL 或 fileId';
   }
   
   // 检查 PDF URL
@@ -239,7 +282,53 @@ onMounted(async () => {
   }
 });
 
-// 加载 Markdown 内容
+// 从后端 API 加载 Markdown 内容（推荐方式）
+const loadMarkdownFromBackend = async (fileId: string) => {
+  loadingMarkdown.value = true;
+  markdownError.value = '';
+  
+  try {
+    console.log('📥 从后端 API 获取 Markdown 内容: fileId=', fileId);
+    
+    // 使用后端 API 获取 Markdown 内容
+    const backendBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+    const apiUrl = `${backendBaseUrl}/api/mineru/markdown/${fileId}`;
+    
+    console.log('📤 请求 URL:', apiUrl);
+    
+    const response = await fetch(apiUrl);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`获取 Markdown 内容失败: ${response.status} - ${errorText}`);
+    }
+    
+    const result = await response.json();
+    
+    if (result.success && result.data && result.data.content) {
+      markdownContent.value = result.data.content;
+      console.log('✅ Markdown 内容获取成功，长度:', markdownContent.value.length);
+    } else {
+      throw new Error(result.message || 'Markdown 内容为空');
+    }
+    
+    loadingMarkdown.value = false;
+    console.log('🎉 Markdown 加载完成');
+    
+  } catch (error: any) {
+    loadingMarkdown.value = false;
+    markdownError.value = error.message || '加载失败';
+    console.error('❌ Markdown 加载失败:', error);
+    
+    // 如果后端获取失败，尝试从 ZIP 文件加载（备用方案）
+    if (resultUrl.value) {
+      console.log('⚠️ 后端获取失败，尝试从 ZIP 文件加载...');
+      await loadMarkdownFromZip();
+    }
+  }
+};
+
+// 从 ZIP 文件加载 Markdown 内容（备用方案）
 const loadMarkdownFromZip = async () => {
   loadingMarkdown.value = true;
   markdownError.value = '';
@@ -247,13 +336,8 @@ const loadMarkdownFromZip = async () => {
   try {
     console.log('📥 开始下载 ZIP 文件:', resultUrl.value);
     
-    // 通过代理下载
-    const isDevelopment = import.meta.env.DEV;
-    const proxyUrl = isDevelopment 
-      ? `http://localhost:3001/proxy/download?url=${encodeURIComponent(resultUrl.value)}`
-      : resultUrl.value;
-    
-    const response = await fetch(proxyUrl);
+    // 直接下载 ZIP 文件（不使用代理）
+    const response = await fetch(resultUrl.value);
     
     if (!response.ok) {
       throw new Error(`下载失败: ${response.status}`);

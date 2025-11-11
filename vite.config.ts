@@ -13,15 +13,17 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      // 代理 MinerU API 请求
+      // 代理 MinerU API 请求到后端服务器
       '/api/mineru': {
-        target: 'https://mineru.net',
+        target: 'http://localhost:8080',
         changeOrigin: true,
-        secure: true,
-        rewrite: (path) => path.replace(/^\/api\/mineru/, '/api/v4'),
+        secure: false,
         configure: (proxy, options) => {
           proxy.on('proxyReq', (proxyReq, req, res) => {
             console.log('代理请求:', req.method, req.url);
+          });
+          proxy.on('error', (err, req, res) => {
+            console.error('代理错误:', err);
           });
         }
       }

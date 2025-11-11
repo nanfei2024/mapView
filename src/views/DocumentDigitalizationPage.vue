@@ -30,9 +30,9 @@
           <div class="feature-notice">
             <div class="notice-icon">💡</div>
             <div class="notice-content">
-              <strong>推荐使用方式：</strong>
-              <p>由于浏览器安全限制，<strong>建议优先使用 URL 上传方式</strong>。</p>
-              <p>本地文件上传需要配置后端服务器支持，或将文件上传到可访问的URL后再进行解析。</p>
+              <strong>使用说明：</strong>
+              <p><strong>本地上传</strong>：文件上传到后端，由后端处理整个流程，避免浏览器安全限制。</p>
+              <p><strong>URL上传</strong>：适用于已有公开访问URL的文件，直接传入URL进行解析。</p>
             </div>
           </div>
         </section>
@@ -253,10 +253,10 @@ import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import {
   createExtractTask,
-  createBatchUploadUrls,
-  uploadFileToUrl,
+  uploadFile,
+  parseDocument,
+  getMarkdownContent,
   pollTaskUntilComplete,
-  pollBatchTaskUntilComplete,
   getErrorMessage,
   type TaskResult
 } from '../api/mineruApi';
@@ -285,10 +285,12 @@ interface UploadedFile {
   status: 'pending' | 'uploading' | 'processing' | 'completed' | 'error';
   file?: File;
   type?: string;
+  fileId?: string; // 后端返回的文件ID
   taskId?: string;
   resultUrl?: string;
   sourceUrl?: string; // 源文件URL（仅URL上传有效）
   errorMessage?: string;
+  markdownContent?: string; // Markdown内容
   progress?: {
     extractedPages: number;
     totalPages: number;
@@ -370,6 +372,23 @@ const addFiles = (files: File[]) => {
   });
 };
 
+// 将 GitHub blob URL 转换为 Raw URL
+const convertGitHubUrlToRaw = (url: string): string => {
+  // GitHub blob URL 格式: https://github.com/{owner}/{repo}/blob/{branch}/{path}
+  // GitHub Raw URL 格式: https://raw.githubusercontent.com/{owner}/{repo}/{branch}/{path}
+  const githubBlobPattern = /^https:\/\/github\.com\/([^\/]+)\/([^\/]+)\/blob\/(.+)$/;
+  const match = url.match(githubBlobPattern);
+  
+  if (match) {
+    const [, owner, repo, path] = match;
+    const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${path}`;
+    console.log('🔄 GitHub URL 转换:', url, '→', rawUrl);
+    return rawUrl;
+  }
+  
+  return url; // 如果不是 GitHub blob URL，直接返回原 URL
+};
+
 // 处理URL上传
 const handleUrlUpload = async () => {
   if (!urlInput.value.trim()) {
@@ -377,13 +396,16 @@ const handleUrlUpload = async () => {
     return;
   }
   
-  const url = urlInput.value.trim();
+  let url = urlInput.value.trim();
   
   // URL 基本验证
   if (!url.startsWith('http://') && !url.startsWith('https://')) {
     alert('⚠️ URL 格式错误\n\nURL 必须以 http:// 或 https:// 开头\n\n例如：https://example.com/file.pdf');
     return;
   }
+  
+  // 如果是 GitHub blob URL，转换为 Raw URL
+  url = convertGitHubUrlToRaw(url);
   
   const fileName = url.split('/').pop()?.split('?')[0] || 'document';
   
@@ -479,113 +501,65 @@ const handleUrlUpload = async () => {
   }
 };
 
-// 处理单个文件
+// 处理单个文件（按照流程图三个阶段）
 const processFile = async (file: UploadedFile, index: number) => {
   if (!file.file) {
     alert('文件不存在');
     return;
   }
   
-  // 友好提示：本地文件上传的限制
-  const confirmed = confirm(
-    '⚠️ 本地文件上传限制\n\n' +
-    '由于浏览器安全限制，本地文件上传到云端可能会失败。\n\n' +
-    '建议使用以下方式：\n' +
-    '1. 将文件上传到可访问的URL（如网盘、对象存储）\n' +
-    '2. 使用 URL 上传功能进行解析\n\n' +
-    '是否仍要尝试上传？（可能会失败）'
-  );
-  
-  if (!confirmed) {
-    uploadedFiles.value[index].status = 'pending';
-    return;
-  }
-  
   try {
+    // 阶段一：上传文件到后端
     uploadedFiles.value[index].status = 'uploading';
+    console.log('📤 阶段一：上传文件到后端:', file.name);
     
-    // 1. 申请上传链接
-    const uploadResponse = await createBatchUploadUrls({
-      files: [{
-        name: file.name,
-        data_id: `geo_doc_${Date.now()}_${index}`
-      }],
-      model_version: 'vlm' as const,
+    const uploadResponse = await uploadFile(file.file);
+    if (!uploadResponse.success) {
+      throw new Error(uploadResponse.message || '文件上传失败');
+    }
+    
+    const fileId = uploadResponse.data.fileId;
+    uploadedFiles.value[index].fileId = fileId;
+    console.log('✅ 文件上传成功，fileId:', fileId);
+    
+    // 阶段二：触发解析
+    uploadedFiles.value[index].status = 'processing';
+    console.log('🔄 阶段二：触发解析，fileId:', fileId);
+    
+    const parseResponse = await parseDocument(fileId, {
+      model_version: 'vlm',
       enable_formula: true,
       enable_table: true,
       language: 'ch'
     });
     
-    if (uploadResponse.code !== 0) {
-      throw new Error(getErrorMessage(uploadResponse.code));
+    if (!parseResponse.success) {
+      throw new Error(parseResponse.message || '解析失败');
     }
     
-    const uploadUrl = uploadResponse.data.file_urls[0];
-    const currentBatchId = uploadResponse.data.batch_id;
-    uploadedFiles.value[index].taskId = currentBatchId;
+    console.log('✅ 解析完成:', parseResponse.data);
     
-    // 2. 上传文件到OSS
-    const uploadSuccess = await uploadFileToUrl(uploadUrl, file.file);
-    
-    if (!uploadSuccess) {
-      throw new Error('文件上传失败：浏览器安全限制阻止直接上传到云端存储');
-    }
-    
-    uploadedFiles.value[index].status = 'processing';
-    
-    // 3. 等待一段时间让系统处理上传后的文件
-    await new Promise(resolve => setTimeout(resolve, 3000));
-    
-    // 4. 轮询批量任务状态
-    const result = await pollBatchTaskUntilComplete(currentBatchId, (progress) => {
-      const fileResult = progress.extract_result.find(r => r.file_name === file.name);
-      if (fileResult?.extract_progress) {
-        uploadedFiles.value[index].progress = {
-          extractedPages: fileResult.extract_progress.extracted_pages,
-          totalPages: fileResult.extract_progress.total_pages
-        };
-      }
-    });
-    
-    // 5. 获取该文件的结果
-    const fileResult = result.data.extract_result.find(r => r.file_name === file.name);
-    
-    if (fileResult?.state === 'done') {
+    // 阶段三：获取Markdown内容
+    console.log('📄 阶段三：获取Markdown内容');
+    const markdownResponse = await getMarkdownContent(fileId);
+    if (markdownResponse.success && markdownResponse.data.content) {
+      uploadedFiles.value[index].markdownContent = markdownResponse.data.content;
       uploadedFiles.value[index].status = 'completed';
-      uploadedFiles.value[index].resultUrl = fileResult.full_zip_url;
+      uploadedFiles.value[index].resultUrl = parseResponse.data.full_zip_url;
+      console.log('✅ Markdown内容获取成功');
     } else {
-      throw new Error(fileResult?.err_msg || '解析失败');
+      throw new Error('获取Markdown内容失败');
     }
     
   } catch (error: any) {
     uploadedFiles.value[index].status = 'error';
-    
-    // 判断是否为CORS错误
-    const isCorsError = error.message.includes('Failed to fetch') || 
-                        error.message.includes('CORS') ||
-                        error.message.includes('浏览器安全限制');
-    
-    if (isCorsError) {
-      uploadedFiles.value[index].errorMessage = '浏览器安全限制，建议使用URL上传方式';
-      alert(
-        '❌ 上传失败：浏览器安全限制\n\n' +
-        '解决方案：\n' +
-        '1. 将文件上传到可公开访问的URL\n' +
-        '   （如：百度网盘、阿里云OSS、腾讯云COS等）\n' +
-        '2. 切换到"URL上传"标签\n' +
-        '3. 输入文件URL进行解析\n\n' +
-        '或者配置后端服务器支持文件上传。'
-      );
-    } else {
-      uploadedFiles.value[index].errorMessage = error.message || '处理失败';
-      alert('处理失败: ' + (error.message || '未知错误'));
-    }
-    
+    uploadedFiles.value[index].errorMessage = error.message || '处理失败';
     console.error('文件处理失败:', error);
+    alert('处理失败: ' + (error.message || '未知错误'));
   }
 };
 
-// 批量处理所有待处理文件
+// 批量处理所有待处理文件（按照流程图三个阶段）
 const processAllFiles = async () => {
   const pendingFiles = uploadedFiles.value
     .map((file, index) => ({ file, index }))
@@ -596,130 +570,77 @@ const processAllFiles = async () => {
     return;
   }
   
-  // 友好提示：本地文件批量上传的限制
-  const confirmed = confirm(
-    `⚠️ 批量上传限制提醒\n\n` +
-    `即将批量处理 ${pendingFiles.length} 个文件\n\n` +
-    `由于浏览器安全限制，本地文件上传到云端可能会失败。\n\n` +
-    `建议使用 URL 上传方式：\n` +
-    `1. 将文件上传到可访问的URL\n` +
-    `2. 使用 URL 上传功能进行解析\n\n` +
-    `是否仍要尝试批量上传？`
-  );
-  
-  if (!confirmed) {
-    return;
-  }
-  
   try {
-    // 1. 批量申请上传链接
-    const uploadResponse = await createBatchUploadUrls({
-      files: pendingFiles.map(({ file }, idx) => ({
-        name: file.name,
-        data_id: `geo_doc_batch_${Date.now()}_${idx}`
-      })),
-      model_version: 'vlm' as const,
-      enable_formula: true,
-      enable_table: true,
-      language: 'ch'
-    });
+    console.log(`📤 开始批量处理 ${pendingFiles.length} 个文件`);
     
-    if (uploadResponse.code !== 0) {
-      throw new Error(getErrorMessage(uploadResponse.code));
-    }
-    
-    const currentBatchId = uploadResponse.data.batch_id;
-    batchId.value = currentBatchId;
-    
-    // 2. 批量上传文件
+    // 逐个处理文件（按照流程图三个阶段）
     for (let i = 0; i < pendingFiles.length; i++) {
       const { file, index } = pendingFiles[i];
-      const uploadUrl = uploadResponse.data.file_urls[i];
-      
-      uploadedFiles.value[index].status = 'uploading';
-      uploadedFiles.value[index].taskId = currentBatchId;
       
       try {
-        const uploadSuccess = await uploadFileToUrl(uploadUrl, file.file!);
+        // 阶段一：上传文件到后端
+        uploadedFiles.value[index].status = 'uploading';
+        console.log(`📤 [${i + 1}/${pendingFiles.length}] 阶段一：上传文件: ${file.name}`);
         
-        if (!uploadSuccess) {
+        const uploadResponse = await uploadFile(file.file!);
+        if (!uploadResponse.success) {
+          throw new Error(uploadResponse.message || '文件上传失败');
+        }
+        
+        const fileId = uploadResponse.data.fileId;
+        uploadedFiles.value[index].fileId = fileId;
+        console.log(`✅ [${i + 1}/${pendingFiles.length}] 文件上传成功，fileId: ${fileId}`);
+        
+        // 阶段二：触发解析（异步处理，不阻塞其他文件）
+        uploadedFiles.value[index].status = 'processing';
+        console.log(`🔄 [${i + 1}/${pendingFiles.length}] 阶段二：触发解析，fileId: ${fileId}`);
+        
+        parseDocument(fileId, {
+          model_version: 'vlm',
+          enable_formula: true,
+          enable_table: true,
+          language: 'ch'
+        }).then(async (parseResponse) => {
+          if (!parseResponse.success) {
+            throw new Error(parseResponse.message || '解析失败');
+          }
+          
+          console.log(`✅ [${i + 1}/${pendingFiles.length}] 解析完成`);
+          
+          // 阶段三：获取Markdown内容
+          console.log(`📄 [${i + 1}/${pendingFiles.length}] 阶段三：获取Markdown内容`);
+          const markdownResponse = await getMarkdownContent(fileId);
+          if (markdownResponse.success && markdownResponse.data.content) {
+            uploadedFiles.value[index].markdownContent = markdownResponse.data.content;
+            uploadedFiles.value[index].status = 'completed';
+            uploadedFiles.value[index].resultUrl = parseResponse.data.full_zip_url;
+            console.log(`✅ [${i + 1}/${pendingFiles.length}] Markdown内容获取成功`);
+          } else {
+            throw new Error('获取Markdown内容失败');
+          }
+        }).catch(err => {
           uploadedFiles.value[index].status = 'error';
-          uploadedFiles.value[index].errorMessage = '浏览器安全限制，建议使用URL上传';
-          continue;
+          uploadedFiles.value[index].errorMessage = err.message || '处理失败';
+          console.error(`❌ [${i + 1}/${pendingFiles.length}] 处理失败:`, err);
+        });
+        
+        // 稍微延迟，避免并发请求过多
+        if (i < pendingFiles.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 500));
         }
-      } catch (err) {
+        
+      } catch (err: any) {
         uploadedFiles.value[index].status = 'error';
-        uploadedFiles.value[index].errorMessage = '浏览器安全限制，建议使用URL上传';
-        console.error(`文件 ${file.name} 上传失败:`, err);
-        continue;
+        uploadedFiles.value[index].errorMessage = err.message || '处理失败';
+        console.error(`❌ [${i + 1}/${pendingFiles.length}] 文件处理失败:`, err);
       }
-      
-      uploadedFiles.value[index].status = 'processing';
     }
     
-    // 3. 等待一段时间让系统处理上传后的文件
-    await new Promise(resolve => setTimeout(resolve, 5000));
-    
-    // 4. 轮询批量任务状态
-    const result = await pollBatchTaskUntilComplete(currentBatchId, (progress) => {
-      progress.extract_result.forEach(fileResult => {
-        const fileIndex = uploadedFiles.value.findIndex(f => f.name === fileResult.file_name);
-        if (fileIndex !== -1 && fileResult.extract_progress) {
-          uploadedFiles.value[fileIndex].progress = {
-            extractedPages: fileResult.extract_progress.extracted_pages,
-            totalPages: fileResult.extract_progress.total_pages
-          };
-        }
-      });
-    });
-    
-    // 5. 更新每个文件的结果
-    result.data.extract_result.forEach(fileResult => {
-      const fileIndex = uploadedFiles.value.findIndex(f => f.name === fileResult.file_name);
-      if (fileIndex !== -1) {
-        if (fileResult.state === 'done') {
-          uploadedFiles.value[fileIndex].status = 'completed';
-          uploadedFiles.value[fileIndex].resultUrl = fileResult.full_zip_url;
-        } else if (fileResult.state === 'failed') {
-          uploadedFiles.value[fileIndex].status = 'error';
-          uploadedFiles.value[fileIndex].errorMessage = fileResult.err_msg || '解析失败';
-        }
-      }
-    });
-    
-    // 检查是否有失败的文件
-    const failedCount = uploadedFiles.value.filter(f => f.status === 'error').length;
-    const successCount = uploadedFiles.value.filter(f => f.status === 'completed').length;
-    
-    if (failedCount > 0) {
-      alert(
-        `⚠️ 批量处理完成（部分失败）\n\n` +
-        `成功：${successCount} 个\n` +
-        `失败：${failedCount} 个\n\n` +
-        `失败原因通常是浏览器安全限制。\n` +
-        `建议使用 URL 上传方式。`
-      );
-    } else {
-      alert(`✅ 批量处理完成！\n\n成功处理 ${successCount} 个文件。`);
-    }
+    alert(`✅ 批量上传完成！\n\n已提交 ${pendingFiles.length} 个文件，请等待处理完成。`);
     
   } catch (error: any) {
     console.error('批量处理失败:', error);
-    
-    const isCorsError = error.message.includes('Failed to fetch') || 
-                        error.message.includes('CORS');
-    
-    if (isCorsError) {
-      alert(
-        '❌ 批量上传失败：浏览器安全限制\n\n' +
-        '建议解决方案：\n' +
-        '1. 使用 URL 上传方式\n' +
-        '2. 配置后端服务器支持文件上传\n' +
-        '3. 将文件上传到可访问的URL后再进行解析'
-      );
-    } else {
-      alert('批量处理失败: ' + (error.message || '未知错误'));
-    }
+    alert('批量处理失败: ' + (error.message || '未知错误'));
   }
 };
 
@@ -735,22 +656,36 @@ const clearAllFiles = () => {
 
 // 预览结果 - 跳转到对比预览页面
 const previewResult = (file: UploadedFile) => {
-  if (!file.resultUrl) {
+  if (!file.resultUrl && !file.markdownContent) {
     alert('结果文件不可用');
     return;
   }
   
   console.log('📋 跳转到预览页面:', file.name);
   console.log('📄 源文件URL:', file.sourceUrl || '无（本地上传）');
+  console.log('📄 Markdown内容:', file.markdownContent ? '已获取' : '未获取');
   
   // 跳转到对比预览页面，传递参数
+  const query: any = {
+    fileName: file.name,
+    resultUrl: file.resultUrl || '',
+    originalUrl: file.sourceUrl || '', // 传递该文件的源URL（仅URL上传有效）
+    fileId: file.fileId || '' // 传递 fileId，用于从后端获取 Markdown
+  };
+  
+  // 如果有Markdown内容，也传递过去（如果内容不大）
+  if (file.markdownContent) {
+    // 如果 Markdown 内容太大（> 100KB），不通过 URL 传递，而是通过后端 API 获取
+    if (file.markdownContent.length < 100000) {
+      query.markdownContent = file.markdownContent;
+    } else {
+      console.log('⚠️ Markdown 内容太大，将通过后端 API 获取');
+    }
+  }
+  
   router.push({
     path: '/document-preview',
-    query: {
-      fileName: file.name,
-      resultUrl: file.resultUrl,
-      originalUrl: file.sourceUrl || '' // 传递该文件的源URL（仅URL上传有效）
-    }
+    query
   });
 };
 

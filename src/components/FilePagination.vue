@@ -9,6 +9,20 @@
         </div>
       </div>
       <div class="header-right">
+        <select 
+          v-model="selectedBookId" 
+          class="book-select"
+          @change="handleBookChange"
+        >
+          <option :value="undefined">所有书籍</option>
+          <option 
+            v-for="book in books" 
+            :key="book.id" 
+            :value="book.id"
+          >
+            {{ book.title || book.name }}
+          </option>
+        </select>
         <button class="modern-btn btn-primary" @click="handleUpload">
           <span class="btn-icon">📤</span>
           <span>上传</span>
@@ -20,8 +34,8 @@
       </div>
     </div>
 
-    <!-- 搜索和筛选栏 -->
-    <div class="filter-section">
+    <!-- 搜索和筛选栏（只在选择具体书籍时显示） -->
+    <div v-if="selectedBookId !== undefined" class="filter-section">
       <div class="search-input-wrapper">
         <span class="search-icon">🔍</span>
         <input 
@@ -35,10 +49,12 @@
       
       <div class="filter-controls">
         <select v-model="fileTypeFilter" class="filter-select" @change="handleSearch">
-          <option value="">文件类型</option>
-          <option value="pdf">PDF</option>
-          <option value="md">Markdown</option>
+          <option value="">所有类型</option>
+          <option value="article">文章</option>
           <option value="image">图片</option>
+          <option value="text">文本</option>
+          <option value="table_folder">表格文件夹</option>
+          <option value="img_folder">图片文件夹</option>
         </select>
         
         <button class="filter-btn" @click="resetSearch">
@@ -57,8 +73,35 @@
       </div>
     </div>
     
-    <!-- 文件表格（现代化设计） -->
-    <div class="table-container" v-loading="loading">
+    <!-- 书籍列表（当选择"所有书籍"时显示） -->
+    <div v-if="selectedBookId === undefined" class="table-container" v-loading="loading">
+      <div class="books-grid">
+        <div 
+          v-for="book in books" 
+          :key="book.id"
+          class="book-card"
+          @click="selectBook(book.id)"
+        >
+          <div class="book-icon">📚</div>
+          <div class="book-info">
+            <h3 class="book-title">{{ book.title || book.name }}</h3>
+            <p class="book-author">{{ book.author || '未知作者' }}</p>
+            <p class="book-description">{{ book.description || '暂无描述' }}</p>
+          </div>
+          <div class="book-actions">
+            <button class="book-action-btn" @click.stop="viewBookFiles(book.id)" title="查看文件">
+              👁️
+            </button>
+            <button class="book-action-btn" @click.stop="editBook(book)" title="编辑">
+              ✏️
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 文件表格（当选择具体书籍时显示） -->
+    <div v-else class="table-container" v-loading="loading">
       <table class="modern-table">
         <thead>
           <tr>
@@ -105,17 +148,17 @@
             </td>
             <td class="col-name">
               <div class="file-name-wrapper">
-                <span class="file-icon">{{ getFileIcon(file.file_type) }}</span>
-                <span class="file-name" :title="file.file_path">{{ getFileName(file.file_path) }}</span>
+                <span class="file-icon">{{ getFileIconForItem(file) }}</span>
+                <span class="file-name" :title="getDisplayName(file)">{{ getDisplayName(file) }}</span>
               </div>
             </td>
-            <td class="col-time">{{ formatDate(file.upload_time) }}</td>
+            <td class="col-time">{{ formatDate(file.upload_time || null) }}</td>
             <td class="col-type">
               <span class="type-badge" :class="'type-' + file.file_type">
-                {{ getFileTypeText(file.file_type) }}
+                {{ getFileTypeTextForItem(file) }}
               </span>
             </td>
-            <td class="col-size">--</td>
+            <td class="col-size">{{ formatFileSize(file) }}</td>
             <td class="col-actions">
               <div class="action-buttons-modern">
                 <button class="action-btn" @click="showDetails(file.id)" title="查看">
@@ -134,11 +177,11 @@
       </table>
     </div>
     
-    <!-- 分页控件（现代化） -->
-    <div class="pagination-modern">
+    <!-- 分页控件（现代化，只在显示文件列表时显示） -->
+    <div v-if="selectedBookId !== undefined" class="pagination-modern">
       <div class="pagination-info">
         <span>共 {{ total }} 条记录</span>
-        <select v-model="pageSize" class="page-size-select" @change="handleSizeChange">
+        <select v-model="pageSize" class="page-size-select" @change="handleSizeChange($event)">
           <option :value="10">10/page</option>
           <option :value="20">20/page</option>
           <option :value="50">50/page</option>
@@ -187,13 +230,14 @@
 import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import axios from 'axios';
+import fileApi, { type FileItem, type FileListResponse, type FileSearchParams } from '../api/fileApi';
+import { bookApi, type Book } from '../api/bookApi';
 
 // 路由
 const router = useRouter();
 
 // 状态变量
-const files = ref<any[]>([]); 
+const files = ref<FileItem[]>([]); 
 const searchKeyword = ref('');
 const property = ref('');
 const fileTypeFilter = ref('');
@@ -207,50 +251,84 @@ const fileIdToDelete = ref<number | null>(null);
 const jumpPage = ref(1);
 const sortField = ref('');
 const sortOrder = ref<'asc' | 'desc'>('desc');
-
-// 定义API响应类型
-interface FileData {
-  id: number;
-  property: string;
-  file_type: string;
-  file_path: string;
-  upload_time?: string;
-  [key: string]: any;
-}
-
-interface ApiResponse {
-  content?: FileData[];
-  images?: FileData[];
-  totalRecords: number;
-}
+const selectedBookId = ref<number | undefined>(undefined); // 当前选择的书籍ID
+const books = ref<Book[]>([]); // 书籍列表
 
 // 获取文件列表
 const fetchFiles = async () => {
+  // 如果选择的是"所有书籍"，不获取文件列表
+  if (selectedBookId.value === undefined) {
+    return;
+  }
+
   loading.value = true;
   try {
-    // 构建查询参数
-    const params = new URLSearchParams();
-    params.append('page', currentPage.value.toString());
-    params.append('size', pageSize.value.toString());
-    
-    if (property.value) {
-      params.append('property', property.value);
+    let data: FileListResponse;
+
+    // 根据文件类型筛选，使用不同的查询方式
+    // 注意：后端搜索接口的 keyword 是必填参数，即使为空也要传递
+    if (fileTypeFilter.value === 'img_folder') {
+      // 图片文件夹：通过搜索 fileType="img_folder" 获取所有图片文件夹
+      const searchParams: FileSearchParams = {
+        keyword: searchKeyword.value.trim() || '', // 必填，空字符串也可以
+        fileType: 'img_folder',
+        bookId: selectedBookId.value,
+        page: currentPage.value,
+        size: pageSize.value,
+      };
+      const searchResult = await fileApi.searchFiles(searchParams);
+      files.value = searchResult.files || [];
+      total.value = searchResult.total || 0;
+    } else if (fileTypeFilter.value === 'table_folder') {
+      // 表格文件夹：通过搜索 fileType="table_folder" 获取所有表格文件夹
+      const searchParams: FileSearchParams = {
+        keyword: searchKeyword.value.trim() || '', // 必填，空字符串也可以
+        fileType: 'table_folder',
+        bookId: selectedBookId.value,
+        page: currentPage.value,
+        size: pageSize.value,
+      };
+      const searchResult = await fileApi.searchFiles(searchParams);
+      files.value = searchResult.files || [];
+      total.value = searchResult.total || 0;
+    } else if (searchKeyword.value.trim() || fileTypeFilter.value) {
+      // 有搜索关键词或文件类型筛选，使用搜索接口
+      const searchParams: FileSearchParams = {
+        keyword: searchKeyword.value.trim() || '', // 必填，空字符串也可以
+        fileType: fileTypeFilter.value || undefined,
+        bookId: selectedBookId.value,
+        page: currentPage.value,
+        size: pageSize.value,
+      };
+      const searchResult = await fileApi.searchFiles(searchParams);
+      files.value = searchResult.files || [];
+      total.value = searchResult.total || 0;
+    } else {
+      // 否则使用按章节查询接口（获取所有文件）
+      data = await fileApi.getFilesByProperty(property.value, {
+        page: currentPage.value,
+        size: pageSize.value,
+        bookId: selectedBookId.value,
+      });
+      
+      // 合并文章和图片
+      files.value = [...(data.content || []), ...(data.images || [])];
+      total.value = data.totalRecords || 0;
     }
-    
-    if (fileTypeFilter.value) {
-      params.append('fileType', fileTypeFilter.value);
-    }
-    
-    const url = `http://localhost:8080/api/files${property.value ? `/${property.value}` : ''}?${params.toString()}`;
-    const response = await axios.get<ApiResponse>(url);
-    const data = response.data;
-    
-    // 合并文章和图片
-    files.value = [...(data.content || []), ...(data.images || [])];
-    total.value = data.totalRecords || 0;
-  } catch (error) {
-    console.error('获取文件列表失败', error);
-    ElMessage.error('获取文件列表失败');
+
+    console.log('📋 文件列表加载成功:', {
+      文件数量: files.value.length,
+      总数: total.value,
+      当前页: currentPage.value,
+      每页大小: pageSize.value,
+      书籍ID: selectedBookId.value,
+      文件类型筛选: fileTypeFilter.value,
+    });
+  } catch (error: any) {
+    console.error('❌ 获取文件列表失败:', error);
+    ElMessage.error(`获取文件列表失败: ${error.message || '未知错误'}`);
+    files.value = [];
+    total.value = 0;
   } finally {
     loading.value = false;
   }
@@ -276,8 +354,10 @@ const refreshList = () => {
 };
 
 // 页面大小变化
-const handleSizeChange = (newSize: number) => {
-  pageSize.value = newSize;
+const handleSizeChange = (event: Event) => {
+  const target = event.target as HTMLSelectElement;
+  pageSize.value = parseInt(target.value);
+  currentPage.value = 1; // 重置到第一页
   fetchFiles();
 };
 
@@ -287,13 +367,37 @@ const handleSelectionChange = (selection: any[]) => {
 };
 
 // 批量删除
-const batchDelete = () => {
+const batchDelete = async () => {
   if (selectedFiles.value.length === 0) {
     ElMessage.warning('请选择要删除的文件');
     return;
   }
   
-  deleteDialogVisible.value = true;
+  try {
+    await ElMessageBox.confirm(
+      `确定要删除选中的 ${selectedFiles.value.length} 个文件吗？`,
+      '确认删除',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning',
+      }
+    );
+
+    loading.value = true;
+    const result = await fileApi.batchDeleteFiles(selectedFiles.value);
+    
+    ElMessage.success(result.message);
+    selectedFiles.value = [];
+    await fetchFiles();
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      console.error('批量删除失败:', error);
+      ElMessage.error(`批量删除失败: ${error.message || '未知错误'}`);
+    }
+  } finally {
+    loading.value = false;
+  }
 };
 
 // 确认删除单个文件
@@ -302,26 +406,30 @@ const confirmDelete = (id: number) => {
   deleteDialogVisible.value = true;
 };
 
-// 执行删除操作
+// 确认删除单个文件
 const confirmDeleteAction = async () => {
+  if (fileIdToDelete.value === null) {
+    return;
+  }
+
   try {
-    if (fileIdToDelete.value !== null) {
-      // 删除单个文件
-      await deleteFile(fileIdToDelete.value);
-    } else {
-      // 批量删除
-      const ids = selectedFiles.value.map(file => file.id);
-      await Promise.all(ids.map(id => deleteFile(id, false)));
-      ElMessage.success(`成功删除 ${ids.length} 个文件`);
+    await ElMessageBox.confirm(
+      '确定要删除这个文件吗？',
+      '确认删除',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning',
+      }
+    );
+
+    await deleteFile(fileIdToDelete.value);
+    await fetchFiles();
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      console.error('删除文件失败', error);
     }
-    
-    // 刷新列表
-    fetchFiles();
-  } catch (error) {
-    console.error('删除文件失败', error);
-    ElMessage.error('删除文件失败');
   } finally {
-    // 重置状态
     deleteDialogVisible.value = false;
     fileIdToDelete.value = null;
   }
@@ -330,20 +438,11 @@ const confirmDeleteAction = async () => {
 // 删除文件
 const deleteFile = async (fileId: number, showMessage = true) => {
   try {
-    interface DeleteResponse {
-      message?: string;
-      [key: string]: any;
+    await fileApi.deleteFile(fileId);
+    if (showMessage) {
+      ElMessage.success('文件删除成功');
     }
-    
-    const response = await axios.delete<DeleteResponse>(`http://localhost:8080/api/files/${fileId}`);
-    if (response.status === 200) {
-      if (showMessage) {
-        ElMessage.success('文件删除成功');
-      }
-      return true;
-    } else {
-      throw new Error(response.data?.message || '删除失败');
-    }
+    return true;
   } catch (error: any) {
     console.error('删除文件时发生错误', error);
     if (showMessage) {
@@ -419,8 +518,81 @@ const getFileIcon = (fileType: string) => {
 // 获取文件名
 const getFileName = (filePath: string) => {
   if (!filePath) return '';
-  const parts = filePath.split('/');
+  // 同时兼容 Linux/Windows 路径分隔符
+  const parts = filePath.split(/[/\\]/);
   return parts[parts.length - 1] || filePath;
+};
+
+// 生成友好显示名（不暴露后端真实路径）
+const getDisplayName = (file: FileItem) => {
+  const baseName = getFileName(file.file_path || '');
+
+  // 去掉书籍ID前缀，如 "1_1.1_xxx.pdf" -> "1.1_xxx.pdf"
+  const cleaned = baseName.replace(/^\d+_/, '');
+
+  const property = (file.property || '').trim();
+  const ext = cleaned.split('.').pop()?.toLowerCase() || '';
+  const nameNoExt = cleaned.replace(/\.[^.]+$/, '');
+
+  // 目录类型
+  if (file.is_directory || file.file_type === 'img_folder') {
+    return property ? `${property} 图片文件夹` : '图片文件夹';
+  }
+  if (file.file_type === 'table_folder') {
+    return property ? `${property} 表格文件夹` : '表格文件夹';
+  }
+
+  // 摘要文件（如 4.3_summary.txt 或 4.3/summary.txt）
+  if (/(^|[_-])summary\.(txt|md)$/i.test(baseName)) {
+    return property ? `${property} 摘要` : '章节摘要';
+  }
+
+  // Markdown / PDF 等正文
+  if (ext === 'md') {
+    return property ? `${property} ${nameNoExt.replace(/^\d+\.\d+\s*/, '')}` : nameNoExt;
+  }
+  if (ext === 'pdf') {
+    return property ? `${property} ${nameNoExt.replace(/^\d+\.\d+\s*/, '')}` : nameNoExt;
+  }
+  if (ext === 'txt' && file.file_type === 'text') {
+    return property ? `${property} 文本` : nameNoExt;
+  }
+
+  // 图片/其它
+  if (['jpg','jpeg','png','gif','bmp','webp','svg'].includes(ext)) {
+    return property ? `${property} 图片` : cleaned;
+  }
+
+  // 兜底：优先用 details，其次 property，最后文件名
+  return file.details?.trim() || (property ? property : cleaned);
+};
+
+// ===== 文章格式细分（PDF / MD） =====
+const getArticleFormat = (file: FileItem): 'PDF' | 'MD' | '' => {
+  const ext = (file.file_path || '').split('.').pop()?.toLowerCase() || '';
+  if (ext === 'pdf') return 'PDF';
+  if (ext === 'md' || ext === 'markdown') return 'MD';
+  return '';
+};
+
+const getFileTypeTextForItem = (file: FileItem) => {
+  if (file.file_type === 'article') {
+    const fmt = getArticleFormat(file);
+    if (fmt === 'PDF') return '文章(PDF)';
+    if (fmt === 'MD') return '文章(MD)';
+    return '文章';
+  }
+  return getFileTypeText(file.file_type);
+};
+
+const getFileIconForItem = (file: FileItem) => {
+  if (file.file_type === 'article') {
+    const fmt = getArticleFormat(file);
+    if (fmt === 'PDF') return '📕';
+    if (fmt === 'MD') return '📝';
+  }
+  // 回退使用原有逻辑（基于类型字符串的简易图标）
+  return getFileIcon(file.file_type || getFileName(file.file_path || ''));
 };
 
 // 获取文件类型文本
@@ -429,9 +601,31 @@ const getFileTypeText = (fileType: string) => {
   if (!type) return '文件类';
   
   if (type === 'pdf') return 'PDF文档';
-  if (type === 'md' || type === 'markdown') return 'Markdown';
+  if (type === 'md' || type === 'markdown' || type === 'article') return '文章';
   if (type.includes('image') || ['jpg', 'jpeg', 'png', 'gif'].includes(type)) return '图片';
-  return '文件类';
+  if (type === 'text') return '文本';
+  if (type.includes('table') || type.includes('folder')) return '文件夹';
+  return type;
+};
+
+// 格式化文件大小
+const formatFileSize = (file: FileItem): string => {
+  // 如果文件是目录，显示为文件夹
+  if (file.is_directory) {
+    return '文件夹';
+  }
+  
+  // 如果有文件大小信息，格式化显示
+  if (file.file_size) {
+    const bytes = typeof file.file_size === 'number' ? file.file_size : parseInt(file.file_size);
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+  }
+  
+  return '--';
 };
 
 // 选择/取消选择文件
@@ -514,18 +708,96 @@ const jumpToPage = () => {
   }
 };
 
-// 上传和新建文件夹（占位方法）
+// 上传文件
 const handleUpload = () => {
-  ElMessage.info('上传功能开发中...');
+  // 创建文件输入元素
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.multiple = true;
+  input.accept = '.pdf,.doc,.docx,.txt,.md,.png,.jpg,.jpeg,.xlsx,.xls,.csv';
+  
+  input.onchange = async (event: Event) => {
+    const target = event.target as HTMLInputElement;
+    if (!target.files || target.files.length === 0) {
+      return;
+    }
+
+    const filesToUpload = Array.from(target.files);
+    
+    try {
+      loading.value = true;
+      ElMessage.info(`开始上传 ${filesToUpload.length} 个文件...`);
+      
+      const result = await fileApi.uploadFiles(filesToUpload, selectedBookId.value);
+      
+      // 检查上传结果
+      const successCount = Object.values(result.results || {}).filter(
+        msg => msg.includes('成功') || msg.includes('上传成功')
+      ).length;
+      
+      if (successCount > 0) {
+        ElMessage.success(`成功上传 ${successCount} 个文件`);
+        await fetchFiles(); // 刷新列表
+      } else {
+        ElMessage.warning('部分文件上传失败，请查看详细信息');
+      }
+    } catch (error: any) {
+      console.error('文件上传失败:', error);
+      ElMessage.error(`文件上传失败: ${error.message || '未知错误'}`);
+    } finally {
+      loading.value = false;
+    }
+  };
+  
+  input.click();
 };
 
+// 新建文件夹（暂时不支持，显示提示）
 const handleNewFolder = () => {
-  ElMessage.info('新建文件夹功能开发中...');
+  ElMessage.info('新建文件夹功能暂未实现，您可以通过上传文件时指定章节属性来组织文件');
+};
+
+// 书籍选择变化
+const handleBookChange = () => {
+  currentPage.value = 1; // 重置到第一页
+  if (selectedBookId.value !== undefined) {
+    fetchFiles(); // 只有选择了具体书籍时才获取文件列表
+  }
+};
+
+// 选择书籍
+const selectBook = (bookId: number) => {
+  selectedBookId.value = bookId;
+  currentPage.value = 1;
+  fetchFiles();
+};
+
+// 查看书籍文件
+const viewBookFiles = (bookId: number) => {
+  selectBook(bookId);
+};
+
+// 编辑书籍
+const editBook = (book: Book) => {
+  ElMessage.info(`编辑书籍功能开发中: ${book.title || book.name}`);
+};
+
+// 加载书籍列表
+const loadBooks = async () => {
+  try {
+    const response = await bookApi.getAllBooks();
+    books.value = response.books || [];
+    console.log('📚 书籍列表加载成功:', books.value.length, '本书');
+  } catch (error: any) {
+    console.error('❌ 加载书籍列表失败:', error);
+    // 不显示错误提示，因为这是可选功能
+  }
 };
 
 // 初始化
-onMounted(() => {
-  fetchFiles();
+onMounted(async () => {
+  await loadBooks();
+  await fetchFiles();
 });
 </script>
 
@@ -635,6 +907,115 @@ onMounted(() => {
 .header-right {
   display: flex;
   gap: 12px;
+  align-items: center;
+}
+
+.book-select {
+  padding: 10px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #374151;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 150px;
+}
+
+.book-select:hover {
+  border-color: #d1d5db;
+}
+
+.book-select:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* 书籍列表网格样式 */
+.books-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 24px;
+  padding: 24px;
+}
+
+.book-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 24px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: relative;
+}
+
+.book-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  border-color: #667eea;
+}
+
+.book-icon {
+  font-size: 48px;
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.book-info {
+  flex: 1;
+}
+
+.book-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 8px 0;
+}
+
+.book-author {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0 0 8px 0;
+}
+
+.book-description {
+  font-size: 13px;
+  color: #9ca3af;
+  margin: 0;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.book-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  padding-top: 12px;
+  border-top: 1px solid #f3f4f6;
+}
+
+.book-action-btn {
+  padding: 8px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 16px;
+}
+
+.book-action-btn:hover {
+  background: #f9fafb;
+  border-color: #667eea;
+  transform: scale(1.1);
 }
 
 .modern-btn {
