@@ -4,14 +4,7 @@
     <div class="split-container" :class="{ 'split-active': showBookViewer }">
       <!-- 左侧地图区域 -->
       <div class="map-section" :class="{ 'map-shrink': showBookViewer }">
-        <div id="map" ref="mapContainer">
-          <!-- 添加 AI 对话框 -->
-          <AIChatBox 
-            v-if="map"
-            :map="map"
-            @toggleLayers="handleToggleLayers"
-          />
-        </div>
+        <div id="map" ref="mapContainer"></div>
       </div>
 
       <!-- 右侧书籍查看器 -->
@@ -236,7 +229,6 @@
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { ref, onMounted, nextTick, computed, defineProps, defineEmits, watch } from "vue";
-import AIChatBox from './AIChatBox.vue';
 import MapboxDraw from '@mapbox/mapbox-gl-draw';
 import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css';
 import * as turf from '@turf/turf';

@@ -89,7 +89,8 @@ import mapboxgl from 'mapbox-gl';
 const props = defineProps({
   map: {
     type: Object,
-    required: true
+    required: false,
+    default: null
   }
 });
 
@@ -222,6 +223,11 @@ const processAIResponse = async (input) => {
                      input.match(/看看(.+)/);
     
     if (cityMatch) {
+      // 检查 map 是否可用
+      if (!props.map) {
+        return '抱歉，地图尚未加载完成，请稍后再试。';
+      }
+      
       const cityName = cityMatch[1].replace(/市$/, '').trim();
       
       // 检查预设城市
@@ -271,10 +277,16 @@ const processAIResponse = async (input) => {
 
   // 处理缩放控制
   if (lowercaseInput.includes('放大')) {
+    if (!props.map) {
+      return '抱歉，地图尚未加载完成，请稍后再试。';
+    }
     props.map.zoomIn();
     return '正在放大地图...';
   }
   if (lowercaseInput.includes('缩小')) {
+    if (!props.map) {
+      return '抱歉，地图尚未加载完成，请稍后再试。';
+    }
     props.map.zoomOut();
     return '正在缩小地图...';
   }

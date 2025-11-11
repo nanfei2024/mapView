@@ -1,75 +1,171 @@
 <template>
-  <div class="map-container" :class="{ 'split-mode': showBookViewer }">
-    <!-- 地图容器 -->
-    <MapVisualization v-if="showMap" 
-      :activeLayers="activeLayers"
-      @toggle-layer="toggleLayer"
-      @add-layer="addLayer"
-      @remove-layer="removeLayer"
-      @clear-all-layers="clearAllLayers"
-      @change-basemap="changeBasemap"
-      @basemap-loaded="handleBasemapLoaded"
-      :currentBasemap="currentBasemap"
-      :showPlateManager="showPlateManager"
-      @close-plate-manager="showPlateManager = false"
-      ref="mapRef"
-      @book-viewer-change="handleBookViewerChange"
-    />
+  <div class="app-layout">
+    <!-- 左侧侧边栏 -->
+    <div class="sidebar" :class="{ collapsed: sidebarCollapsed }">
+      <!-- 顶部Logo区域 -->
+      <div class="sidebar-header">
+        <div class="logo-container">
+          <svg class="logo-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span class="logo-text" v-if="!sidebarCollapsed">地质信息系统</span>
+        </div>
+        <button class="collapse-btn" @click="toggleSidebar">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
 
-    <!-- 右侧控制面板 -->
-    <div class="control-panel" :class="{ 'control-panel-with-viewer': showBookViewer }">
-      <h3>功能控制</h3>
-      <div class="control-buttons">
-        <div class="control-btn" @click="navigateToDocumentDigitalization">
-          <span class="btn-icon">🌍</span>
-          <span class="btn-text">地质文档数字化</span>
-        </div>
-        <div class="control-btn" @click="navigateToFileList">
-          <span class="btn-icon">📋</span>
-          <span class="btn-text">文件管理</span>
-        </div>
-        <div class="control-btn" @click="toggleMeasurePanel">
-          <span class="btn-icon">📏</span>
-          <span class="btn-text">测量</span>
-          <!-- 测量工具面板 -->
-          <div class="measure-panel" v-show="showMeasurePanel">
-            <div class="measure-btn" @click.stop="handleMeasure('reset')">
-              <span class="measure-icon">🌍</span>
-              <span>重置视图</span>
-            </div>
-            <div class="measure-btn" @click.stop="handleMeasure('distance')">
-              <span class="measure-icon">📏</span>
-              <span>测距</span>
-            </div>
-            <div class="measure-btn" @click.stop="handleMeasure('area')">
-              <span class="measure-icon">⬢</span>
-              <span>测面</span>
-            </div>
-            <div class="measure-btn" @click.stop="handleMeasure('clear')">
-              <span class="measure-icon">🗑️</span>
-              <span>清除</span>
+      <!-- 功能菜单 -->
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <div class="nav-section-title" v-if="!sidebarCollapsed">核心功能</div>
+          
+          <div class="nav-item" @click="navigateToDocumentDigitalization" title="地质文档数字化">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M9 12H15M9 16H15M17 21H7C5.89543 21 5 20.1046 5 19V5C5 3.89543 5.89543 3 7 3H12.5858C12.851 3 13.1054 3.10536 13.2929 3.29289L18.7071 8.70711C18.8946 8.89464 19 9.149 19 9.41421V19C19 20.1046 18.1046 21 17 21Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span class="nav-text" v-if="!sidebarCollapsed">文档数字化</span>
+          </div>
+
+          <div class="nav-item" @click="navigateToFileList" title="文件管理">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M3 7C3 5.89543 3.89543 5 5 5H9L11 7H19C20.1046 7 21 7.89543 21 9V17C21 18.1046 20.1046 19 19 19H5C3.89543 19 3 18.1046 3 17V7Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span class="nav-text" v-if="!sidebarCollapsed">文件管理</span>
+          </div>
+
+          <div class="nav-item" @click="toggleMeasurePanel" title="测量工具">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M4 4L20 20M4 20L20 4M8 12H16M12 8V16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span class="nav-text" v-if="!sidebarCollapsed">测量工具</span>
+            <!-- 测量工具子菜单 -->
+            <div class="sub-menu" v-show="showMeasurePanel">
+              <div class="sub-menu-item" @click.stop="handleMeasure('reset')">
+                <svg class="sub-icon" viewBox="0 0 24 24" fill="none">
+                  <path d="M21.168 8A10.003 10.003 0 0 0 12 2C6.815 2 2.55 5.947 2.05 11" stroke="currentColor" stroke-width="2"/>
+                  <path d="M3 16a10.003 10.003 0 0 0 9 6c5.185 0 9.45-3.947 9.95-9" stroke="currentColor" stroke-width="2"/>
+                </svg>
+                <span>重置视图</span>
+              </div>
+              <div class="sub-menu-item" @click.stop="handleMeasure('distance')">
+                <svg class="sub-icon" viewBox="0 0 24 24" fill="none">
+                  <path d="M5 12H19M5 12L9 8M5 12L9 16M19 12L15 8M19 12L15 16" stroke="currentColor" stroke-width="2"/>
+                </svg>
+                <span>测距</span>
+              </div>
+              <div class="sub-menu-item" @click.stop="handleMeasure('area')">
+                <svg class="sub-icon" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 2L2 7V17L12 22L22 17V7L12 2Z" stroke="currentColor" stroke-width="2"/>
+                </svg>
+                <span>测面</span>
+              </div>
+              <div class="sub-menu-item" @click.stop="handleMeasure('clear')">
+                <svg class="sub-icon" viewBox="0 0 24 24" fill="none">
+                  <path d="M3 6H21M8 6V4C8 2.89543 8.89543 2 10 2H14C15.1046 2 16 2.89543 16 4V6M19 6V20C19 21.1046 18.1046 22 17 22H7C5.89543 22 5 21.1046 5 20V6H19Z" stroke="currentColor" stroke-width="2"/>
+                </svg>
+                <span>清除</span>
+              </div>
             </div>
           </div>
-        </div>
-        <div class="control-btn" @click="toggleMapDataPanel">
-          <span class="btn-icon">📊</span>
-          <span class="btn-text">底图数据</span>
-        </div>
-        <div class="control-btn" @click="navigateToBooks">
-          <span class="btn-icon">📚</span>
-          <span class="btn-text">书籍查看</span>
-        </div>
-        <div class="control-btn" @click="togglePlateManager">
-          <span class="btn-icon">🗂️</span>
-          <span class="btn-text">板块数据管理</span>
-        </div>
-      </div>
 
-      <!-- 显示的组件 -->
-      <div class="panel-content" v-if="showAnyComponent">
-        <!-- 组件内容已移至独立页面 -->
+          <div class="nav-item" @click="toggleMapDataPanel" title="底图数据">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M3 3V16C3 17.1046 3.89543 18 5 18H16M21 21L21 8M21 21L8 21M21 21L16 16L12 19L8 15L3 19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span class="nav-text" v-if="!sidebarCollapsed">底图数据</span>
+        </div>
+
+          <div class="nav-item" @click="navigateToBooks" title="书籍查看">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 6.5C10.5 4.5 8 3 5 3V19C8 19 10.5 20.5 12 22.5C13.5 20.5 16 19 19 19V3C16 3 13.5 4.5 12 6.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span class="nav-text" v-if="!sidebarCollapsed">书籍查看</span>
+        </div>
+
+          <div class="nav-item" @click="togglePlateManager" title="板块数据管理">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M3 7V17C3 18.1046 3.89543 19 5 19H19C20.1046 19 21 18.1046 21 17V7C21 5.89543 20.1046 5 19 5H5C3.89543 5 3 5.89543 3 7Z" stroke="currentColor" stroke-width="2"/>
+              <path d="M3 10H21M8 5V19" stroke="currentColor" stroke-width="2"/>
+            </svg>
+            <span class="nav-text" v-if="!sidebarCollapsed">板块管理</span>
+          </div>
+
+          <div class="nav-item" @click="toggleBasemapPanel" title="底图切换">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M3 3H21V21H3V3Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M3 9H21M3 15H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M12 3V21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span class="nav-text" v-if="!sidebarCollapsed">底图切换</span>
+            <!-- 底图切换子菜单 -->
+            <div class="sub-menu basemap-sub-menu" v-show="showBasemapPanel">
+              <div 
+                v-for="map in basemaps" 
+                :key="map.id"
+                class="sub-menu-item"
+                :class="{ active: currentBasemap === map.id }"
+                @click.stop="changeBasemap(map.id)"
+              >
+                <svg class="sub-icon" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+                </svg>
+                <span>{{ map.name }}</span>
+                <svg v-if="currentBasemap === map.id" class="check-icon" viewBox="0 0 24 24" fill="none">
+                  <path d="M5 13L9 17L19 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <div class="nav-item" @click="toggleAIChat" title="AI助手">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M21 15C21 15.5304 20.7893 16.0391 20.4142 16.4142C20.0391 16.7893 19.5304 17 19 17H7L3 21V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H19C19.5304 3 20.0391 3.21071 20.4142 3.58579C20.7893 3.96086 21 4.46957 21 5V15Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M9 9H9.01M12 9H12.01M15 9H15.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span class="nav-text" v-if="!sidebarCollapsed">AI助手</span>
       </div>
     </div>
+      </nav>
+
+      <!-- 侧边栏底部 -->
+      <div class="sidebar-footer" v-if="!sidebarCollapsed">
+        <div class="user-info">
+          <div class="user-avatar">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M12 11C14.2091 11 16 9.20914 16 7C16 4.79086 14.2091 3 12 3C9.79086 3 8 4.79086 8 7C8 9.20914 9.79086 11 12 11Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="user-details">
+            <div class="user-name">地质研究员</div>
+            <div class="user-status">在线</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右侧主内容区 -->
+    <div class="main-content" :class="{ expanded: sidebarCollapsed, 'split-mode': showBookViewer }">
+      <!-- 地图容器 -->
+      <MapVisualization v-if="showMap" 
+        :activeLayers="activeLayers"
+        @toggle-layer="toggleLayer"
+        @add-layer="addLayer"
+        @remove-layer="removeLayer"
+        @clear-all-layers="clearAllLayers"
+        @change-basemap="changeBasemap"
+        @basemap-loaded="handleBasemapLoaded"
+        :currentBasemap="currentBasemap"
+        :showPlateManager="showPlateManager"
+        @close-plate-manager="showPlateManager = false"
+        ref="mapRef"
+        @book-viewer-change="handleBookViewerChange"
+      />
     
     <!-- 专题底图数据面板 -->
     <div id="controls" 
@@ -110,30 +206,12 @@
       </ul>
     </div>
     
-    <!-- 底图选择可视化窗口 - 右下角 -->
-    <div class="basemap-switcher">
-      <div class="basemap-toggle" @click="toggleBasemapSelector">
-        <span class="toggle-icon">🗺️</span>
-        <span class="toggle-text">底图切换</span>
-      </div>
-      
-      <div class="basemap-selector" v-show="showBasemapSelector">
-        <div class="basemap-options">
-          <div 
-            v-for="map in basemaps.slice(0, 4)" 
-            :key="map.id"
-            class="basemap-option"
-            :class="{ active: currentBasemap === map.id, loading: isBasemapLoading && currentBasemap === map.id }"
-            @click="changeBasemap(map.id)"
-            :data-name="map.name"
-          >
-            <div class="option-preview" :class="map.id"></div>
-            <div class="loading-indicator" v-if="isBasemapLoading && currentBasemap === map.id">
-              <div class="spinner"></div>
-            </div>
-          </div>
-        </div>
-      </div>
+    <!-- AI助手聊天盒子 -->
+    <AIChatBox 
+      v-if="showAIChat" 
+      @close="showAIChat = false"
+      :class="{ 'ai-chat-with-viewer': showBookViewer }"
+    />
     </div>
   </div>
 </template>
@@ -142,6 +220,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import MapVisualization from '../components/MapVisualization.vue';
+import AIChatBox from '../components/AIChatBox.vue';
 
 // 定义图层接口
 interface Layer {
@@ -186,12 +265,15 @@ const showMap = ref(true);
 const showMapDataPanel = ref(false);
 const showBookViewer = ref(false);
 const mapRef = ref<InstanceType<typeof MapVisualization> | null>(null);
+const sidebarCollapsed = ref(false);
 
 // 添加底图相关状态
-const showBasemapList = ref(false);
-const showBasemapSelector = ref(false);
+const showBasemapPanel = ref(false);
 const currentBasemap = ref('streets');
 const activeLayers = ref<string[]>([]);
+
+// AI助手状态
+const showAIChat = ref(false);
 
 // 添加底图加载状态
 const isBasemapLoading = ref(false);
@@ -373,7 +455,7 @@ const changeBasemap = (mapId: string) => {
     mapRef.value.changeBasemap(mapId);
   }
   
-  showBasemapSelector.value = false; // 选择后关闭选择器
+  showBasemapPanel.value = false; // 选择后关闭面板
 };
 
 // 处理底图加载完成事件
@@ -429,22 +511,13 @@ const handleMeasure = (action: string) => {
   showMeasurePanel.value = false;
 };
 
-// 添加点击外部关闭测量面板
+// 添加点击外部关闭面板
 const handleClickOutside = (event: MouseEvent) => {
   const target = event.target as HTMLElement;
-  if (!target.closest('.control-btn')) {
+  if (!target.closest('.nav-item')) {
     showMeasurePanel.value = false;
+    showBasemapPanel.value = false;
   }
-  
-  // 点击外部关闭底图选择器
-  if (showBasemapSelector.value && !target.closest('.basemap-switcher')) {
-    showBasemapSelector.value = false;
-  }
-};
-
-// 切换底图选择器显示
-const toggleBasemapSelector = () => {
-  showBasemapSelector.value = !showBasemapSelector.value;
 };
 
 // 添加导航到书籍列表页面的方法
@@ -457,6 +530,25 @@ const togglePlateManager = () => {
   showPlateManager.value = !showPlateManager.value;
 };
 
+// 切换侧边栏折叠状态
+const toggleSidebar = () => {
+  sidebarCollapsed.value = !sidebarCollapsed.value;
+};
+
+// 切换底图面板
+const toggleBasemapPanel = () => {
+  showBasemapPanel.value = !showBasemapPanel.value;
+  // 关闭其他面板
+  if (showBasemapPanel.value) {
+    showMeasurePanel.value = false;
+  }
+};
+
+// 切换AI助手
+const toggleAIChat = () => {
+  showAIChat.value = !showAIChat.value;
+};
+
 onMounted(() => {
   document.addEventListener('click', handleClickOutside);
 });
@@ -467,220 +559,341 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.map-container {
-  position: relative;
+/* 全局布局 */
+.app-layout {
+  display: flex;
   height: 100vh;
   width: 100%;
   overflow: hidden;
-  font-family: 'Poppins', 'Helvetica Neue', Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  background: #f5f7fa;
+}
+
+/* ========== 侧边栏样式 ========== */
+.sidebar {
+  width: 260px;
+  background: linear-gradient(180deg, #1a1d29 0%, #0f1419 100%);
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 2px 0 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  position: relative;
+}
+
+.sidebar.collapsed {
+  width: 70px;
+}
+
+/* 侧边栏头部 */
+.sidebar-header {
+  padding: 20px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.logo-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.logo-icon {
+  width: 32px;
+  height: 32px;
+  color: #10b981;
+  flex-shrink: 0;
+}
+
+.logo-text {
+  font-size: 18px;
+  font-weight: 700;
+  color: #ffffff;
+  white-space: nowrap;
+  letter-spacing: 0.5px;
+}
+
+.collapse-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.collapse-btn svg {
+  width: 20px;
+  height: 20px;
+  color: #9ca3af;
+  transition: all 0.3s ease;
+}
+
+.sidebar.collapsed .collapse-btn svg {
+  transform: rotate(180deg);
+}
+
+.collapse-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.collapse-btn:hover svg {
+  color: #10b981;
+}
+
+/* 侧边栏导航 */
+.sidebar-nav {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: visible;  /* 允许子菜单显示在侧边栏外 */
+  padding: 12px 8px;
+}
+
+.sidebar-nav::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sidebar-nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.nav-section {
+  margin-bottom: 24px;
+}
+
+.nav-section-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 8px 12px;
+  margin-bottom: 4px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 12px;
+  margin: 2px 0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #9ca3af;
+  position: relative;
+}
+
+.sidebar.collapsed .nav-item {
+  justify-content: center;
+  padding: 12px;
+}
+
+.nav-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 0;
+  background: linear-gradient(180deg, #10b981 0%, #059669 100%);
+  border-radius: 0 3px 3px 0;
+  transition: height 0.2s ease;
+}
+
+.nav-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
+}
+
+.nav-item:hover::before {
+  height: 70%;
+}
+
+.nav-item:active {
+  background: rgba(255, 255, 255, 0.08);
+  transform: scale(0.98);
+}
+
+.nav-icon {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  stroke-width: 2;
+}
+
+.nav-text {
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* 子菜单样式 */
+.sub-menu {
+  position: absolute;
+  left: 100%;
+  top: 0;
+  background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+  border-radius: 8px;
+  padding: 8px;
+  margin-left: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  min-width: 180px;
+  z-index: 1001;
+  animation: slideInRight 0.2s ease;
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.sub-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #9ca3af;
+  font-size: 14px;
+}
+
+.sub-menu-item:hover {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+}
+
+.sub-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+/* 底图子菜单特殊样式 */
+.basemap-sub-menu {
+  min-width: 200px;
+}
+
+.basemap-sub-menu .sub-menu-item {
+  justify-content: space-between;
+}
+
+.basemap-sub-menu .sub-menu-item.active {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
+
+.check-icon {
+  width: 16px;
+  height: 16px;
+  color: #10b981;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+/* 侧边栏底部 */
+.sidebar-footer {
+  padding: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.user-info:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.user-avatar {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.user-avatar svg {
+  width: 20px;
+  height: 20px;
+  color: #ffffff;
+}
+
+.user-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.user-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-status {
+  font-size: 12px;
+  color: #10b981;
+}
+
+/* ========== 主内容区 ========== */
+.main-content {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-left: 0;
+}
+
+.main-content.expanded {
+  margin-left: 0;
 }
 
 /* 分屏模式下的容器样式 */
-.map-container.split-mode #controls {
-  right: 42%; /* 确保在分屏时位于地图区域内 */
+.main-content.split-mode #controls {
+  right: 42%;
   width: 280px;
 }
 
-.control-panel {
-  position: absolute;
-  top: 20px;
-  left: 20px;
-  width: 360px;
-  background: linear-gradient(135deg, rgba(10, 18, 25, 0.92) 0%, rgba(15, 25, 35, 0.92) 100%);
-  border-radius: 16px;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4), 
-              0 0 0 1px rgba(255, 255, 255, 0.08),
-              inset 0 1px 0 rgba(255, 255, 255, 0.05);
-  padding: 20px;
-  z-index: 1000;
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-}
-
-.control-panel h3 {
-  margin: 0 0 24px 0;
-  font-size: 20px;
-  font-weight: 700;
-  padding-bottom: 16px;
-  border-bottom: 2px solid rgba(255, 255, 255, 0.08);
-  text-align: center;
-  position: relative;
-  letter-spacing: 1.2px;
-  background: linear-gradient(135deg, #00e5b0 0%, #00a3ff 50%, #00e5b0 100%);
-  background-size: 200% auto;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  animation: gradient-shift 3s ease infinite;
-  text-shadow: 0 2px 10px rgba(0, 229, 176, 0.2);
-}
-
-@keyframes gradient-shift {
-  0%, 100% {
-    background-position: 0% center;
-  }
-  50% {
-    background-position: 100% center;
-  }
-}
-
-.control-panel h3::after {
-  content: '';
-  position: absolute;
-  bottom: -2px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 120px;
-  height: 3px;
-  background: linear-gradient(90deg, 
-    transparent 0%, 
-    rgba(0, 229, 176, 0.4) 20%, 
-    rgba(0, 229, 176, 1) 50%, 
-    rgba(0, 163, 255, 1) 50%, 
-    rgba(0, 229, 176, 0.4) 80%, 
-    transparent 100%);
-  border-radius: 3px;
-  box-shadow: 0 0 10px rgba(0, 229, 176, 0.5);
-}
-
-.control-buttons {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-  margin-bottom: 16px;
-}
-
-.control-btn {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 18px 10px;
-  background: linear-gradient(135deg, rgba(17, 26, 36, 0.95) 0%, rgba(26, 38, 53, 0.95) 100%);
-  border: 1.5px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-}
-
-.control-btn::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(135deg, rgba(0, 229, 176, 0.15) 0%, rgba(0, 163, 255, 0.15) 100%);
-  opacity: 0;
-  transition: opacity 0.4s ease;
-}
-
-.control-btn::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 0;
-  height: 0;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(0, 229, 176, 0.2) 0%, transparent 70%);
-  transform: translate(-50%, -50%);
-  transition: width 0.6s ease, height 0.6s ease;
-}
-
-.control-btn:hover {
-  background: linear-gradient(135deg, rgba(0, 229, 176, 0.1) 0%, rgba(0, 163, 255, 0.1) 100%);
-  border-color: rgba(0, 229, 176, 0.5);
-  transform: translateY(-4px) scale(1.02);
-  box-shadow: 0 8px 24px rgba(0, 229, 176, 0.25), 
-              0 0 0 1px rgba(0, 229, 176, 0.1),
-              inset 0 1px 0 rgba(255, 255, 255, 0.1);
-}
-
-.control-btn:hover::before {
-  opacity: 1;
-}
-
-.control-btn:hover::after {
-  width: 200px;
-  height: 200px;
-}
-
-.control-btn:active {
-  transform: translateY(-2px) scale(0.98);
-  box-shadow: 0 4px 12px rgba(0, 229, 176, 0.2);
-}
-
-.btn-icon {
-  font-size: 28px;
-  margin-bottom: 8px;
-  position: relative;
-  z-index: 1;
-  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.4));
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  display: block;
-  line-height: 1;
-}
-
-.control-btn:hover .btn-icon {
-  transform: scale(1.15) translateY(-2px);
-  filter: drop-shadow(0 4px 12px rgba(0, 229, 176, 0.4));
-}
-
-.btn-text {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.9);
-  white-space: nowrap;
-  font-weight: 600;
-  position: relative;
-  z-index: 1;
-  transition: all 0.4s ease;
-  letter-spacing: 0.3px;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
-}
-
-.control-btn:hover .btn-text {
-  color: #00e5b0;
-  text-shadow: 0 0 8px rgba(0, 229, 176, 0.6), 0 1px 4px rgba(0, 0, 0, 0.4);
-}
-
-.panel-content {
-  margin-top: 16px;
-  padding: 16px;
-  background: rgba(17, 26, 36, 0.8);
-  border-radius: 10px;
-  border: 1px solid rgba(26, 38, 53, 0.8);
-  max-height: calc(100vh - 180px);
-  overflow-y: auto;
-  width: 100%;
-  color: #ffffff;
-  box-shadow: inset 0 1px 5px rgba(0, 0, 0, 0.1);
-}
-
-/* 自定义滚动条样式 */
-.panel-content::-webkit-scrollbar {
-  width: 6px;
-}
-
-.panel-content::-webkit-scrollbar-track {
-  background: rgba(10, 18, 25, 0.5);
-  border-radius: 3px;
-}
-
-.panel-content::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 3px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.panel-content::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 229, 176, 0.3);
-}
 
 /* 专题底图数据面板样式 */
 #controls {
@@ -911,212 +1124,8 @@ onUnmounted(() => {
   z-index: 1;
 }
 
-/* 底图选择可视化窗口样式 */
-.basemap-visualizer {
-  display: none; /* 隐藏旧的底图选择器 */
-}
-
-/* 新的底图切换器样式 */
-.basemap-switcher {
-  position: absolute;
-  bottom: 80px;
-  right: 80px;
-  z-index: 1000;
-}
-
-.basemap-toggle {
-  display: flex;
-  align-items: center;
-  background: #fff;
-  border-radius: 4px;
-  padding: 8px 12px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-weight: 500;
-}
-
-.basemap-toggle:hover {
-  background: #f0f0f0;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-.toggle-icon {
-  font-size: 18px;
-  margin-right: 8px;
-}
-
-.toggle-text {
-  font-size: 14px;
-  font-weight: 500;
-  color: #333;
-}
-
-.basemap-selector {
-  position: absolute;
-  bottom: 0; /* 与底图切换按钮底部对齐 */
-  right: 100%; /* 放置在按钮的左侧 */
-  margin-right: 10px; /* 与按钮保持一定距离 */
-  background: #fff;
-  border-radius: 4px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-  padding: 10px;
-  width: 400px;
-  transform-origin: bottom right; /* 从右下角展开 */
-  animation: popup 0.3s ease-out;
-  z-index: 1001;
-}
-
-@keyframes popup {
-  from {
-    opacity: 0;
-    transform: scale(0.8);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-.basemap-options {
-  display: flex; /* 改为flex布局 */
-  flex-direction: row; /* 横向排列 */
-  justify-content: space-between; /* 均匀分布 */
-  gap: 15px; /* 增加间距从10px到15px */
-}
-
-.basemap-option {
-  flex: 1; /* 让每个选项平均分配空间 */
-  cursor: pointer;
-  border: 2px solid transparent;
-  border-radius: 4px;
-  overflow: hidden;
-  transition: all 0.2s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  position: relative;
-}
-
-.basemap-option:hover {
-  transform: scale(1.05);
-  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
-  z-index: 1;
-}
-
-.basemap-option.active {
-  border-color: #4285f4;
-  box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.3);
-  transform: scale(1.05);
-}
-
-.basemap-option.active::before {
-  content: '✓';
-  position: absolute;
-  top: 5px;
-  right: 5px;
-  width: 18px;
-  height: 18px;
-  background: #4285f4;
-  color: white;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  font-weight: bold;
-  z-index: 2;
-}
-
-.basemap-option.loading .option-preview {
-  opacity: 0.6;
-}
-
-.loading-indicator {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.3);
-}
-
-.spinner {
-  width: 24px;
-  height: 24px;
-  border: 3px solid rgba(0, 0, 0, 0.1);
-  border-radius: 50%;
-  border-top-color: #4285f4;
-  animation: spin 1s ease-in-out infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-.option-preview {
-  height: 60px; /* 减小高度以适应横向排列 */
-  width: 100%;
-  background-size: cover;
-  background-position: center;
-}
-
-.option-preview.streets {
-  background-image: url('https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/0,0,1/300x300?access_token=pk.eyJ1IjoiY3VkODUiLCJhIjoiY2xrYnFncXZhMGc1cTNlbmFrNHN1N2cxeCJ9.69E3f8nMJkvqQDRhLSojVw');
-}
-
-.option-preview.satellite {
-  background-image: url('https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/0,0,1/300x300?access_token=pk.eyJ1IjoiY3VkODUiLCJhIjoiY2xrYnFncXZhMGc1cTNlbmFrNHN1N2cxeCJ9.69E3f8nMJkvqQDRhLSojVw');
-}
-
-.option-preview.light {
-  background-image: url('https://api.mapbox.com/styles/v1/mapbox/light-v11/static/0,0,1/300x300?access_token=pk.eyJ1IjoiY3VkODUiLCJhIjoiY2xrYnFncXZhMGc1cTNlbmFrNHN1N2cxeCJ9.69E3f8nMJkvqQDRhLSojVw');
-}
-
-.option-preview.dark {
-  background-image: url('https://api.mapbox.com/styles/v1/mapbox/dark-v11/static/0,0,1/300x300?access_token=pk.eyJ1IjoiY3VkODUiLCJhIjoiY2xrYnFncXZhMGc1cTNlbmFrNHN1N2cxeCJ9.69E3f8nMJkvqQDRhLSojVw');
-}
-
-/* 分屏模式下的底图选择器位置调整 */
-.split-mode .basemap-switcher {
+/* AI助手聊天盒子样式 */
+.ai-chat-with-viewer {
   right: 42%;
-}
-
-/* 分屏模式下不需要特殊调整弹出位置，因为使用了相对定位 */
-/* .split-mode .basemap-selector {
-  right: -300px;
-} */
-
-/* 添加底图名称显示 */
-.basemap-option::after {
-  content: attr(data-name);
-  display: block;
-  text-align: center;
-  padding: 5px 0;
-  font-size: 12px;
-  color: #333;
-  background: rgba(255, 255, 255, 0.8);
-  position: absolute;
-  bottom: 0;
-  width: 100%;
-}
-
-/* 响应式调整 */
-@media screen and (max-width: 768px) {
-  .basemap-selector {
-    width: 320px; /* 在小屏幕上减小宽度 */
-    margin-right: 5px; /* 在小屏幕上减小间距 */
-  }
-  
-  .option-preview {
-    height: 50px; /* 在小屏幕上减小高度 */
-  }
-  
-  .basemap-option::after {
-    font-size: 10px; /* 在小屏幕上减小字体大小 */
-    padding: 3px 0;
-  }
 }
 </style>
