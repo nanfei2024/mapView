@@ -6,6 +6,8 @@ import BookListPage from '../views/BookListPage.vue';
 import FileListPage from '../views/FileListPage.vue';
 import DocumentDigitalizationPage from '../views/DocumentDigitalizationPage.vue';
 import DocumentPreviewPage from '../views/DocumentPreviewPage.vue';
+import KnowledgeGraphPage from '../views/KnowledgeGraphPage.vue';
+import HierarchicalGraphPage from '../views/HierarchicalGraphPage.vue';
 
 const routes = [
   {
@@ -43,6 +45,16 @@ const routes = [
     path: '/document-preview',
     name: 'documentPreview',
     component: DocumentPreviewPage,
+  },
+  {
+    path: '/knowledge-graph',
+    name: 'knowledgeGraph',
+    component: KnowledgeGraphPage,
+  },
+  {
+    path: '/hierarchical-graph',
+    name: 'hierarchicalGraph',
+    component: HierarchicalGraphPage,
   },
 ];
 

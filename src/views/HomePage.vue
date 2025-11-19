@@ -29,14 +29,14 @@
               <path d="M9 12H15M9 16H15M17 21H7C5.89543 21 5 20.1046 5 19V5C5 3.89543 5.89543 3 7 3H12.5858C12.851 3 13.1054 3.10536 13.2929 3.29289L18.7071 8.70711C18.8946 8.89464 19 9.149 19 9.41421V19C19 20.1046 18.1046 21 17 21Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
             <span class="nav-text" v-if="!sidebarCollapsed">文档数字化</span>
-          </div>
+        </div>
 
           <div class="nav-item" @click="navigateToFileList" title="文件管理">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M3 7C3 5.89543 3.89543 5 5 5H9L11 7H19C20.1046 7 21 7.89543 21 9V17C21 18.1046 20.1046 19 19 19H5C3.89543 19 3 18.1046 3 17V7Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
             <span class="nav-text" v-if="!sidebarCollapsed">文件管理</span>
-          </div>
+        </div>
 
           <div class="nav-item" @click="toggleMeasurePanel" title="测量工具">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -50,28 +50,28 @@
                   <path d="M21.168 8A10.003 10.003 0 0 0 12 2C6.815 2 2.55 5.947 2.05 11" stroke="currentColor" stroke-width="2"/>
                   <path d="M3 16a10.003 10.003 0 0 0 9 6c5.185 0 9.45-3.947 9.95-9" stroke="currentColor" stroke-width="2"/>
                 </svg>
-                <span>重置视图</span>
-              </div>
+              <span>重置视图</span>
+            </div>
               <div class="sub-menu-item" @click.stop="handleMeasure('distance')">
                 <svg class="sub-icon" viewBox="0 0 24 24" fill="none">
                   <path d="M5 12H19M5 12L9 8M5 12L9 16M19 12L15 8M19 12L15 16" stroke="currentColor" stroke-width="2"/>
                 </svg>
-                <span>测距</span>
-              </div>
+              <span>测距</span>
+            </div>
               <div class="sub-menu-item" @click.stop="handleMeasure('area')">
                 <svg class="sub-icon" viewBox="0 0 24 24" fill="none">
                   <path d="M12 2L2 7V17L12 22L22 17V7L12 2Z" stroke="currentColor" stroke-width="2"/>
                 </svg>
-                <span>测面</span>
-              </div>
+              <span>测面</span>
+            </div>
               <div class="sub-menu-item" @click.stop="handleMeasure('clear')">
                 <svg class="sub-icon" viewBox="0 0 24 24" fill="none">
                   <path d="M3 6H21M8 6V4C8 2.89543 8.89543 2 10 2H14C15.1046 2 16 2.89543 16 4V6M19 6V20C19 21.1046 18.1046 22 17 22H7C5.89543 22 5 21.1046 5 20V6H19Z" stroke="currentColor" stroke-width="2"/>
                 </svg>
-                <span>清除</span>
-              </div>
+              <span>清除</span>
             </div>
           </div>
+        </div>
 
           <div class="nav-item" @click="toggleMapDataPanel" title="底图数据">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -119,8 +119,8 @@
                   <path d="M5 13L9 17L19 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
               </div>
-            </div>
-          </div>
+        </div>
+      </div>
 
           <div class="nav-item" @click="toggleAIChat" title="AI助手">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -768,7 +768,7 @@ onUnmounted(() => {
     transform: translateX(-10px);
   }
   to {
-    opacity: 1;
+  opacity: 1;
     transform: translateX(0);
   }
 }

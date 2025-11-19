@@ -310,10 +310,10 @@ const fetchFiles = async () => {
         size: pageSize.value,
         bookId: selectedBookId.value,
       });
-      
-      // 合并文章和图片
-      files.value = [...(data.content || []), ...(data.images || [])];
-      total.value = data.totalRecords || 0;
+    
+    // 合并文章和图片
+    files.value = [...(data.content || []), ...(data.images || [])];
+    total.value = data.totalRecords || 0;
     }
 
     console.log('📋 文件列表加载成功:', {
@@ -427,7 +427,7 @@ const confirmDeleteAction = async () => {
     await fetchFiles();
   } catch (error: any) {
     if (error !== 'cancel') {
-      console.error('删除文件失败', error);
+    console.error('删除文件失败', error);
     }
   } finally {
     deleteDialogVisible.value = false;
@@ -439,10 +439,10 @@ const confirmDeleteAction = async () => {
 const deleteFile = async (fileId: number, showMessage = true) => {
   try {
     await fileApi.deleteFile(fileId);
-    if (showMessage) {
-      ElMessage.success('文件删除成功');
-    }
-    return true;
+      if (showMessage) {
+        ElMessage.success('文件删除成功');
+      }
+      return true;
   } catch (error: any) {
     console.error('删除文件时发生错误', error);
     if (showMessage) {
@@ -697,7 +697,7 @@ const visiblePages = computed(() => {
 const goToPage = (page: number) => {
   if (page >= 1 && page <= totalPages.value) {
     currentPage.value = page;
-    fetchFiles();
+  fetchFiles();
   }
 };
 

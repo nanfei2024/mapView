@@ -49,6 +49,14 @@
           <span class="tab-icon">📊</span>
           <span class="tab-text">我的表库</span>
         </button>
+        <button 
+          class="tab-btn"
+          :class="{ active: activeTab === 'knowledge' }"
+          @click="activeTab = 'knowledge'"
+        >
+          <span class="tab-icon">🕸️</span>
+          <span class="tab-text">知识图谱</span>
+        </button>
       </div>
     </div>
 
@@ -68,6 +76,11 @@
       <div v-if="activeTab === 'tables'" class="tab-content">
         <TableLibrary />
       </div>
+
+      <!-- 知识图谱 -->
+      <div v-if="activeTab === 'knowledge'" class="tab-content">
+        <HierarchicalKnowledgeGraph />
+      </div>
     </main>
   </div>
 </template>
@@ -78,11 +91,12 @@ import { useRouter } from 'vue-router';
 import FilePagination from '../components/FilePagination.vue';
 import ImageGallery from '../components/ImageGallery.vue';
 import TableLibrary from '../components/TableLibrary.vue';
+import HierarchicalKnowledgeGraph from '../components/HierarchicalKnowledgeGraph.vue';
 
 const router = useRouter();
 
 // 当前激活的标签页
-const activeTab = ref<'files' | 'images' | 'tables'>('files');
+const activeTab = ref<'files' | 'images' | 'tables' | 'knowledge'>('files');
 
 // 返回上一页
 const goBack = () => {
