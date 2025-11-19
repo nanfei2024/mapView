@@ -23,13 +23,13 @@
             {{ book.title || book.name }}
           </option>
         </select>
-        <button class="modern-btn btn-primary" @click="handleUpload">
+        <button class="modern-btn btn-primary" @click="showUploadDialog = true">
           <span class="btn-icon">📤</span>
           <span>上传</span>
         </button>
-        <button class="modern-btn btn-secondary" @click="handleNewFolder">
-          <span class="btn-icon">📁</span>
-          <span>新建文件夹</span>
+        <button class="modern-btn btn-secondary" @click="showCreateBookDialog = true">
+          <span class="btn-icon">📚</span>
+          <span>新建书籍</span>
         </button>
       </div>
     </div>
@@ -223,11 +223,189 @@
         </div>
       </div>
     </div>
+
+    <!-- 创建书籍对话框 -->
+    <el-dialog
+      v-model="showCreateBookDialog"
+      title="创建新书籍"
+      width="500px"
+      :close-on-click-modal="false"
+    >
+      <el-form :model="newBookForm" label-width="80px">
+        <el-form-item label="书籍名称" required>
+          <el-input v-model="newBookForm.name" placeholder="请输入书籍名称（唯一标识）" />
+        </el-form-item>
+        <el-form-item label="书籍标题" required>
+          <el-input v-model="newBookForm.title" placeholder="请输入书籍标题" />
+        </el-form-item>
+        <el-form-item label="作者">
+          <el-input v-model="newBookForm.author" placeholder="请输入作者" />
+        </el-form-item>
+        <el-form-item label="描述">
+          <el-input
+            v-model="newBookForm.description"
+            type="textarea"
+            :rows="3"
+            placeholder="请输入书籍描述"
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showCreateBookDialog = false">取消</el-button>
+        <el-button type="primary" @click="handleCreateBook" :loading="creatingBook">
+          创建
+        </el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 上传文件对话框 -->
+    <el-dialog
+      v-model="showUploadDialog"
+      title="上传文件"
+      width="600px"
+      :close-on-click-modal="false"
+    >
+      <el-form :model="uploadForm" label-width="120px">
+        <el-form-item label="选择书籍" required>
+          <el-select
+            v-model="uploadForm.bookId"
+            placeholder="请选择书籍"
+            style="width: 100%"
+            @change="handleUploadBookChange"
+          >
+            <el-option
+              v-for="book in books"
+              :key="book.id"
+              :label="book.title || book.name"
+              :value="book.id"
+            />
+          </el-select>
+          <div style="margin-top: 8px;">
+            <el-button type="text" @click="showCreateBookDialog = true; showUploadDialog = false">
+              + 创建新书籍
+            </el-button>
+          </div>
+        </el-form-item>
+
+        <el-form-item label="上传类型" required>
+          <el-radio-group v-model="uploadForm.uploadType" @change="handleUploadTypeChange">
+            <el-radio label="files">普通文件（PDF、MD等）</el-radio>
+            <el-radio label="imageFolder">图片文件夹</el-radio>
+            <el-radio label="tableFolder">表格文件夹</el-radio>
+            <el-radio label="summary">摘要文件</el-radio>
+          </el-radio-group>
+        </el-form-item>
+
+        <!-- 普通文件上传 -->
+        <template v-if="uploadForm.uploadType === 'files'">
+          <el-form-item label="选择文件" required>
+            <el-upload
+              ref="filesUploadRef"
+              :auto-upload="false"
+              :on-change="handleFilesChange"
+              :file-list="uploadForm.files"
+              multiple
+              accept=".pdf,.doc,.docx,.txt,.md"
+            >
+              <el-button type="primary">选择文件</el-button>
+              <template #tip>
+                <div class="el-upload__tip">支持 PDF、DOC、DOCX、TXT、MD 格式</div>
+              </template>
+            </el-upload>
+          </el-form-item>
+        </template>
+
+        <!-- 图片文件夹上传 -->
+        <template v-if="uploadForm.uploadType === 'imageFolder'">
+          <el-form-item label="文件夹名称" required>
+             <el-input
+               v-model="uploadForm.folderName"
+               placeholder="例如：第一章图片 或 chapter-1"
+             />
+          </el-form-item>
+          <el-form-item label="选择图片" required>
+            <el-upload
+              ref="imageFolderUploadRef"
+              :auto-upload="false"
+              :on-change="handleImageFolderChange"
+              :file-list="uploadForm.imageFiles"
+              multiple
+              accept=".png,.jpg,.jpeg,.gif,.bmp"
+            >
+              <el-button type="primary">选择图片</el-button>
+              <template #tip>
+                <div class="el-upload__tip">支持 PNG、JPG、JPEG、GIF、BMP 格式</div>
+              </template>
+            </el-upload>
+          </el-form-item>
+        </template>
+
+        <!-- 表格文件夹上传 -->
+        <template v-if="uploadForm.uploadType === 'tableFolder'">
+          <el-form-item label="文件夹名称" required>
+             <el-input
+               v-model="uploadForm.folderName"
+               placeholder="例如：第一章表格 或 tables-第一章"
+             />
+          </el-form-item>
+          <el-form-item label="选择表格" required>
+            <el-upload
+              ref="tableFolderUploadRef"
+              :auto-upload="false"
+              :on-change="handleTableFolderChange"
+              :file-list="uploadForm.tableFiles"
+              multiple
+              accept=".xlsx,.xls,.csv"
+            >
+              <el-button type="primary">选择表格</el-button>
+              <template #tip>
+                <div class="el-upload__tip">支持 XLSX、XLS、CSV 格式</div>
+              </template>
+            </el-upload>
+          </el-form-item>
+        </template>
+
+        <!-- 摘要文件上传 -->
+        <template v-if="uploadForm.uploadType === 'summary'">
+          <el-form-item label="章节属性" required>
+            <el-input
+              v-model="uploadForm.property"
+              placeholder="例如：3.1（章节编号）"
+            />
+          </el-form-item>
+          <el-form-item label="选择摘要文件" required>
+            <el-upload
+              ref="summaryUploadRef"
+              :auto-upload="false"
+              :on-change="handleSummaryChange"
+              :file-list="uploadForm.summaryFile"
+              accept=".txt"
+            >
+              <el-button type="primary">选择文件</el-button>
+              <template #tip>
+                <div class="el-upload__tip">支持 TXT 格式</div>
+              </template>
+            </el-upload>
+          </el-form-item>
+        </template>
+      </el-form>
+      <template #footer>
+        <el-button @click="handleCancelUpload">取消</el-button>
+        <el-button
+          type="primary"
+          @click="handleSubmitUpload"
+          :loading="uploading"
+          :disabled="!canSubmitUpload"
+        >
+          上传
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import fileApi, { type FileItem, type FileListResponse, type FileSearchParams } from '../api/fileApi';
@@ -253,6 +431,38 @@ const sortField = ref('');
 const sortOrder = ref<'asc' | 'desc'>('desc');
 const selectedBookId = ref<number | undefined>(undefined); // 当前选择的书籍ID
 const books = ref<Book[]>([]); // 书籍列表
+
+// 上传对话框相关状态
+const showUploadDialog = ref(false);
+const showCreateBookDialog = ref(false);
+const creatingBook = ref(false);
+const uploading = ref(false);
+
+// 创建书籍表单
+const newBookForm = ref({
+  name: '',
+  title: '',
+  author: '',
+  description: ''
+});
+
+// 上传表单
+const uploadForm = ref({
+  bookId: undefined as number | undefined,
+  uploadType: 'files' as 'files' | 'imageFolder' | 'tableFolder' | 'summary',
+  files: [] as any[],
+  imageFiles: [] as any[],
+  tableFiles: [] as any[],
+  summaryFile: [] as any[],
+  folderName: '',
+  property: ''
+});
+
+// 上传组件引用
+const filesUploadRef = ref();
+const imageFolderUploadRef = ref();
+const tableFolderUploadRef = ref();
+const summaryUploadRef = ref();
 
 // 获取文件列表
 const fetchFiles = async () => {
@@ -549,10 +759,24 @@ const getDisplayName = (file: FileItem) => {
 
   // Markdown / PDF 等正文
   if (ext === 'md') {
-    return property ? `${property} ${nameNoExt.replace(/^\d+\.\d+\s*/, '')}` : nameNoExt;
+    if (!property) return nameNoExt;
+    // 如果 property 和 nameNoExt 相同，只显示一次
+    if (property === nameNoExt) return property;
+    // 如果 nameNoExt 以 property 开头，只显示 nameNoExt
+    if (nameNoExt.startsWith(property)) return nameNoExt;
+    // 否则显示 property + nameNoExt（去掉数字前缀）
+    const cleanedName = nameNoExt.replace(/^\d+\.\d+\s*/, '');
+    return cleanedName ? `${property} ${cleanedName}` : property;
   }
   if (ext === 'pdf') {
-    return property ? `${property} ${nameNoExt.replace(/^\d+\.\d+\s*/, '')}` : nameNoExt;
+    if (!property) return nameNoExt;
+    // 如果 property 和 nameNoExt 相同，只显示一次
+    if (property === nameNoExt) return property;
+    // 如果 nameNoExt 以 property 开头，只显示 nameNoExt
+    if (nameNoExt.startsWith(property)) return nameNoExt;
+    // 否则显示 property + nameNoExt（去掉数字前缀）
+    const cleanedName = nameNoExt.replace(/^\d+\.\d+\s*/, '');
+    return cleanedName ? `${property} ${cleanedName}` : property;
   }
   if (ext === 'txt' && file.file_type === 'text') {
     return property ? `${property} 文本` : nameNoExt;
@@ -708,48 +932,216 @@ const jumpToPage = () => {
   }
 };
 
-// 上传文件
-const handleUpload = () => {
-  // 创建文件输入元素
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.multiple = true;
-  input.accept = '.pdf,.doc,.docx,.txt,.md,.png,.jpg,.jpeg,.xlsx,.xls,.csv';
+// 创建书籍
+const handleCreateBook = async () => {
+  if (!newBookForm.value.name || !newBookForm.value.title) {
+    ElMessage.warning('请填写书籍名称和标题');
+    return;
+  }
+
+  try {
+    creatingBook.value = true;
+    const newBook = await bookApi.createBook({
+      name: newBookForm.value.name,
+      title: newBookForm.value.title,
+      author: newBookForm.value.author || '未知作者',
+      description: newBookForm.value.description || ''
+    });
+
+    ElMessage.success('书籍创建成功');
+    showCreateBookDialog.value = false;
+    
+    // 重置表单
+    newBookForm.value = {
+      name: '',
+      title: '',
+      author: '',
+      description: ''
+    };
+
+    // 刷新书籍列表
+    await loadBooks();
+    
+    // 如果上传对话框打开，自动选择新创建的书籍
+    if (showUploadDialog.value) {
+      uploadForm.value.bookId = newBook.id;
+    }
+  } catch (error: any) {
+    console.error('创建书籍失败:', error);
+    ElMessage.error(`创建书籍失败: ${error.message || '未知错误'}`);
+  } finally {
+    creatingBook.value = false;
+  }
+};
+
+// 上传对话框打开时，初始化书籍ID
+const handleUploadBookChange = () => {
+  // 如果选择了书籍，同时更新 selectedBookId
+  if (uploadForm.value.bookId) {
+    selectedBookId.value = uploadForm.value.bookId;
+  }
+};
+
+// 上传类型变化时，重置相关字段
+const handleUploadTypeChange = () => {
+  uploadForm.value.folderName = '';
+  uploadForm.value.property = '';
+  uploadForm.value.files = [];
+  uploadForm.value.imageFiles = [];
+  uploadForm.value.tableFiles = [];
+  uploadForm.value.summaryFile = [];
+};
+
+// 文件选择变化处理
+const handleFilesChange = (file: any, fileList: any[]) => {
+  uploadForm.value.files = fileList;
+};
+
+const handleImageFolderChange = (file: any, fileList: any[]) => {
+  uploadForm.value.imageFiles = fileList;
+};
+
+const handleTableFolderChange = (file: any, fileList: any[]) => {
+  uploadForm.value.tableFiles = fileList;
+};
+
+const handleSummaryChange = (file: any, fileList: any[]) => {
+  uploadForm.value.summaryFile = fileList;
+};
+
+// 检查是否可以提交上传
+const canSubmitUpload = computed(() => {
+  if (!uploadForm.value.bookId) return false;
+  const folderNameTrimmed = (uploadForm.value.folderName || '').trim();
+  const propertyTrimmed = (uploadForm.value.property || '').trim();
   
-  input.onchange = async (event: Event) => {
-    const target = event.target as HTMLInputElement;
-    if (!target.files || target.files.length === 0) {
-      return;
+  switch (uploadForm.value.uploadType) {
+    case 'files':
+      return uploadForm.value.files.length > 0;
+    case 'imageFolder':
+      return folderNameTrimmed.length > 0 && uploadForm.value.imageFiles.length > 0;
+    case 'tableFolder':
+      return folderNameTrimmed.length > 0 && uploadForm.value.tableFiles.length > 0;
+    case 'summary':
+      return propertyTrimmed.length > 0 && uploadForm.value.summaryFile.length > 0;
+    default:
+      return false;
+  }
+});
+
+// 取消上传
+const handleCancelUpload = () => {
+  showUploadDialog.value = false;
+  // 重置表单
+  uploadForm.value = {
+    bookId: selectedBookId.value,
+    uploadType: 'files',
+    files: [],
+    imageFiles: [],
+    tableFiles: [],
+    summaryFile: [],
+    folderName: '',
+    property: ''
+  };
+};
+
+// 提交上传
+const handleSubmitUpload = async () => {
+  if (!canSubmitUpload.value) {
+    ElMessage.warning('请完善上传信息');
+    return;
+  }
+
+  try {
+    uploading.value = true;
+    let result: any;
+    const folderNameTrimmed = (uploadForm.value.folderName || '').trim();
+    const propertyTrimmed = (uploadForm.value.property || '').trim();
+
+    switch (uploadForm.value.uploadType) {
+      case 'files': {
+        const files = uploadForm.value.files.map((f: any) => f.raw || f);
+        result = await fileApi.uploadFiles(files, uploadForm.value.bookId);
+        break;
+      }
+      case 'imageFolder': {
+        if (!folderNameTrimmed) {
+          throw new Error('文件夹名称不能为空');
+        }
+        const imageFiles = uploadForm.value.imageFiles.map((f: any) => f.raw || f);
+        result = await fileApi.uploadImageFolder(
+          folderNameTrimmed,
+          imageFiles,
+          uploadForm.value.bookId
+        );
+        break;
+      }
+      case 'tableFolder': {
+        if (!folderNameTrimmed) {
+          throw new Error('文件夹名称不能为空');
+        }
+        const tableFiles = uploadForm.value.tableFiles.map((f: any) => f.raw || f);
+        result = await fileApi.uploadTableFolder(
+          folderNameTrimmed,
+          tableFiles,
+          uploadForm.value.bookId
+        );
+        break;
+      }
+      case 'summary': {
+        if (!propertyTrimmed) {
+          throw new Error('章节属性不能为空');
+        }
+        const summaryFile = uploadForm.value.summaryFile[0];
+        const file = summaryFile.raw || summaryFile;
+        result = await fileApi.uploadSummary(
+          propertyTrimmed,
+          file,
+          uploadForm.value.bookId
+        );
+        break;
+      }
     }
 
-    const filesToUpload = Array.from(target.files);
-    
-    try {
-      loading.value = true;
-      ElMessage.info(`开始上传 ${filesToUpload.length} 个文件...`);
-      
-      const result = await fileApi.uploadFiles(filesToUpload, selectedBookId.value);
-      
-      // 检查上传结果
-      const successCount = Object.values(result.results || {}).filter(
-        msg => msg.includes('成功') || msg.includes('上传成功')
-      ).length;
-      
-      if (successCount > 0) {
-        ElMessage.success(`成功上传 ${successCount} 个文件`);
-        await fetchFiles(); // 刷新列表
-      } else {
-        ElMessage.warning('部分文件上传失败，请查看详细信息');
-      }
-    } catch (error: any) {
-      console.error('文件上传失败:', error);
-      ElMessage.error(`文件上传失败: ${error.message || '未知错误'}`);
-    } finally {
-      loading.value = false;
+    if (result?.originalFolderName && result.originalFolderName !== result.folderName) {
+      ElMessage.info(
+        `文件夹名称已自动规范化：${result.originalFolderName} → ${result.folderName}`
+      );
     }
-  };
-  
-  input.click();
+
+    ElMessage.success('上传成功');
+    showUploadDialog.value = false;
+
+    const targetBookId = uploadForm.value.bookId;
+
+    // 重置表单
+    handleCancelUpload();
+    
+    // 刷新文件列表
+    if (selectedBookId.value === targetBookId) {
+      await fetchFiles();
+    } else {
+      // 如果上传到了不同的书籍，切换到该书籍
+      selectedBookId.value = targetBookId;
+      await fetchFiles();
+    }
+  } catch (error: any) {
+    console.error('上传失败:', error);
+    
+    // 提供更详细的错误信息
+    let errorMessage = '上传失败';
+    if (error.message) {
+      errorMessage += ': ' + error.message;
+    } else if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      errorMessage = '网络连接失败，请检查：\n1. 后端服务是否运行（http://localhost:8080）\n2. 网络连接是否正常';
+    } else {
+      errorMessage += ': 未知错误，请查看控制台获取详细信息';
+    }
+    
+    ElMessage.error(errorMessage);
+  } finally {
+    uploading.value = false;
+  }
 };
 
 // 新建文件夹（暂时不支持，显示提示）
@@ -793,6 +1185,14 @@ const loadBooks = async () => {
     // 不显示错误提示，因为这是可选功能
   }
 };
+
+// 监听上传对话框打开，初始化书籍ID
+watch(showUploadDialog, (isOpen) => {
+  if (isOpen) {
+    // 如果当前选择了书籍，自动填充
+    uploadForm.value.bookId = selectedBookId.value;
+  }
+});
 
 // 初始化
 onMounted(async () => {

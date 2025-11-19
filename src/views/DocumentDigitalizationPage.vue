@@ -553,9 +553,9 @@ const processFile = async (file: UploadedFile, index: number) => {
     
   } catch (error: any) {
     uploadedFiles.value[index].status = 'error';
-    uploadedFiles.value[index].errorMessage = error.message || '处理失败';
+      uploadedFiles.value[index].errorMessage = error.message || '处理失败';
     console.error('文件处理失败:', error);
-    alert('处理失败: ' + (error.message || '未知错误'));
+      alert('处理失败: ' + (error.message || '未知错误'));
   }
 };
 
@@ -579,7 +579,7 @@ const processAllFiles = async () => {
       
       try {
         // 阶段一：上传文件到后端
-        uploadedFiles.value[index].status = 'uploading';
+      uploadedFiles.value[index].status = 'uploading';
         console.log(`📤 [${i + 1}/${pendingFiles.length}] 阶段一：上传文件: ${file.name}`);
         
         const uploadResponse = await uploadFile(file.file!);
@@ -592,7 +592,7 @@ const processAllFiles = async () => {
         console.log(`✅ [${i + 1}/${pendingFiles.length}] 文件上传成功，fileId: ${fileId}`);
         
         // 阶段二：触发解析（异步处理，不阻塞其他文件）
-        uploadedFiles.value[index].status = 'processing';
+      uploadedFiles.value[index].status = 'processing';
         console.log(`🔄 [${i + 1}/${pendingFiles.length}] 阶段二：触发解析，fileId: ${fileId}`);
         
         parseDocument(fileId, {
@@ -622,8 +622,8 @@ const processAllFiles = async () => {
           uploadedFiles.value[index].status = 'error';
           uploadedFiles.value[index].errorMessage = err.message || '处理失败';
           console.error(`❌ [${i + 1}/${pendingFiles.length}] 处理失败:`, err);
-        });
-        
+    });
+    
         // 稍微延迟，避免并发请求过多
         if (i < pendingFiles.length - 1) {
           await new Promise(resolve => setTimeout(resolve, 500));
@@ -640,7 +640,7 @@ const processAllFiles = async () => {
     
   } catch (error: any) {
     console.error('批量处理失败:', error);
-    alert('批量处理失败: ' + (error.message || '未知错误'));
+      alert('批量处理失败: ' + (error.message || '未知错误'));
   }
 };
 
@@ -667,7 +667,7 @@ const previewResult = (file: UploadedFile) => {
   
   // 跳转到对比预览页面，传递参数
   const query: any = {
-    fileName: file.name,
+      fileName: file.name,
     resultUrl: file.resultUrl || '',
     originalUrl: file.sourceUrl || '', // 传递该文件的源URL（仅URL上传有效）
     fileId: file.fileId || '' // 传递 fileId，用于从后端获取 Markdown

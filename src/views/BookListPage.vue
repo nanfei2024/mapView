@@ -6,46 +6,65 @@
       </div>
       
       <div class="book-list-content">
-        <div class="featured-book">
-          <div class="featured-book-card" @click="openBookDetails(books[0])">
-            <div class="featured-book-cover">
-              <img :src="books[0].coverUrl" :alt="books[0].title" />
-            </div>
-            <div class="featured-book-info">
-              <h3 class="featured-book-title">{{ books[0].title }}</h3>
-              <p class="featured-book-subtitle">亚欧与太平洋造貌构造响应</p>
-              <p class="featured-book-author">作者: {{ books[0].author }}</p>
-              <p class="featured-book-publisher">湖南出版社</p>
-              <p class="featured-book-description">
-                本书详细阐述了板块构造理论与地貌形成的关系，重点研究劳亚区系、冈瓦纳区系和特提斯陆间带的地质特征及其演化过程。
-                通过对亚欧大陆与太平洋板块相互作用的深入分析，揭示了地质构造对地表形态的塑造机制。
-              </p>
-              <div class="featured-book-button">
-                查看详情
+        <!-- 加载状态 -->
+        <div v-if="loading" class="loading-state">
+          <div class="spinner"></div>
+          <p>正在加载书籍列表...</p>
+        </div>
+        
+        <!-- 空状态 -->
+        <div v-else-if="books.length === 0 && relatedBooks.length === 0" class="empty-state">
+          <span class="empty-icon">📚</span>
+          <p>暂无书籍</p>
+          <p class="empty-hint">请在文件管理中心上传书籍文件</p>
+        </div>
+        
+        <!-- 书籍内容 -->
+        <template v-else>
+          <!-- 主要书籍 -->
+          <div v-if="books.length > 0" class="featured-book">
+            <div class="featured-book-card" @click="openBookDetails(books[0])">
+              <div class="featured-book-cover">
+                <img :src="books[0].coverUrl" :alt="books[0].title" @error="handleImageError" />
+              </div>
+              <div class="featured-book-info">
+                <h3 class="featured-book-title">{{ books[0].title }}</h3>
+                <p class="featured-book-subtitle">{{ books[0].description || '地质科学书籍' }}</p>
+                <p class="featured-book-author">作者: {{ books[0].author }}</p>
+                <p class="featured-book-publisher">地质科学书籍馆</p>
+                <p class="featured-book-description">
+                  {{ books[0].description || '本书详细阐述了地质科学相关内容，包含丰富的章节和详细的内容。' }}
+                </p>
+                <div class="featured-book-button">
+                  查看详情
+                </div>
               </div>
             </div>
           </div>
-        </div>
-        
-        <h3 class="section-title">相关推荐</h3>
-        
-        <div class="book-grid">
-          <div 
-            v-for="book in relatedBooks" 
-            :key="book.id" 
-            class="book-card"
-            @click="openBookDetails(book)"
-          >
-            <div class="book-cover">
-              <img :src="book.coverUrl" :alt="book.title" />
-            </div>
-            <div class="book-info">
-              <h3 class="book-title">{{ book.title }}</h3>
-              <p class="book-author">作者: {{ book.author }}</p>
-              <p class="book-chapters">章节数: {{ book.chapters.length }}</p>
+          
+          <!-- 相关推荐 -->
+          <div v-if="relatedBooks.length > 0">
+            <h3 class="section-title">相关推荐</h3>
+            
+            <div class="book-grid">
+              <div 
+                v-for="book in relatedBooks" 
+                :key="book.id" 
+                class="book-card"
+                @click="openBookDetails(book)"
+              >
+                <div class="book-cover">
+                  <img :src="book.coverUrl" :alt="book.title" @error="handleImageError" />
+                </div>
+                <div class="book-info">
+                  <h3 class="book-title">{{ book.title }}</h3>
+                  <p class="book-author">作者: {{ book.author }}</p>
+                  <p class="book-description">{{ book.description || '暂无描述' }}</p>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
+        </template>
       </div>
       
       <!-- 书籍详情弹窗 -->
@@ -62,11 +81,13 @@
   </template>
   
   <script setup lang="ts">
-  import { ref } from 'vue';
+  import { ref, onMounted } from 'vue';
   import { useRouter } from 'vue-router';
+  import { ElMessage } from 'element-plus';
   import BookViewer from '../components/BookViewer.vue';
+  import { bookApi, type Book as ApiBook } from '../api/bookApi';
   
-  // 定义书籍接口
+  // 定义书籍接口（用于 BookViewer）
   interface Section {
     title: string;
     pageNumber: number;
@@ -79,136 +100,87 @@
   }
   
   interface Book {
-    id: string;
+    id: string;  // BookViewer 期望 string 类型
     title: string;
     author: string;
     coverUrl: string;
-    chapters: Chapter[];
+    description?: string;  // 描述信息
+    chapters: Chapter[];  // chapters 是必需的，BookViewer 会在 fetchAllMarkdownFiles 中自动构建
   }
   
   const router = useRouter();
   
-  // 主要书籍和相关推荐书籍数据
-  const books = ref<Book[]>([
-    {
-      id: '1',
-      title: '板块构造与地貌形迹',
-      author: '陈志明',
-      coverUrl: '/images/板块构造与地貌形迹.jpg', // 简化文件名
-      chapters: [
-        {
-          title: '第一章：劳亚区系',
-          chapter: '1',
-          sections: [
-            { title: '1.1 劳亚区系概述', pageNumber: 1 },
-            { title: '1.2 劳亚区系的地质特征', pageNumber: 5 },
-            { title: '1.3 劳亚区系的演化', pageNumber: 10 }
-          ]
-        },
-        {
-          title: '第二章：冈瓦纳区系',
-          chapter: '2',
-          sections: [
-            { title: '2.1 冈瓦纳区系概述', pageNumber: 15 },
-            { title: '2.2 冈瓦纳区系的地质特征', pageNumber: 20 },
-            { title: '2.3 冈瓦纳区系的演化', pageNumber: 25 }
-          ]
-        },
-        {
-          title: '第三章：特提斯陆间带',
-          chapter: '3',
-          sections: [
-            { title: '3.1 特提斯陆间带概述', pageNumber: 30 },
-            { title: '3.2 特提斯陆间带的地质特征', pageNumber: 35 },
-            { title: '3.3 特提斯陆间带的演化', pageNumber: 40 }
-          ]
-        }
-      ]
-    }
-  ]);
+  // 加载状态
+  const loading = ref(false);
   
-  // 相关推荐书籍
-  const relatedBooks = ref<Book[]>([
-    {
-      id: '2',
-      title: '板块构造与地貌形迹',
-      author: '陈志明',
-      coverUrl: '/images/板块构造与地貌形迹下.jpg', // 使用本地图片
-      chapters: [
-        {
-          title: '第一章：地球内部结构',
-          chapter: '1',
-          sections: [
-            { title: '1.1 地壳', pageNumber: 1 },
-            { title: '1.2 地幔', pageNumber: 8 }
-          ]
-        },
-        {
-          title: '第二章：地球物理场',
-          chapter: '2',
-          sections: [
-            { title: '2.1 重力场', pageNumber: 15 },
-            { title: '2.2 磁场', pageNumber: 22 }
-          ]
-        }
-      ]
-    },
-    {
-      id: '3',
-      title: '亚洲地貌圈及其板块造貌构造纲要',
-      author: '陈志明',
-      coverUrl: '/images/亚洲地貌圈及其板块造貌构造纲要.jpg', // 使用本地图片
-      chapters: [
-        {
-          title: '第一章：构造地质学基础',
-          chapter: '1',
-          sections: [
-            { title: '1.1 构造地质学的研究对象', pageNumber: 1 },
-            { title: '1.2 构造地质学的研究方法', pageNumber: 7 }
-          ]
-        },
-        {
-          title: '第二章：地质构造类型',
-          chapter: '2',
-          sections: [
-            { title: '2.1 褶皱构造', pageNumber: 15 },
-            { title: '2.2 断层构造', pageNumber: 25 }
-          ]
-        }
-      ]
-    },
-    {
-      id: '4',
-      title: '地学新两论 上篇 ',
-      author: '陈志明',
-      coverUrl: '/images/地学新两论 上篇 板块造貌构造学-兼论板块学说新发展.jpg', // 使用本地图片
-      chapters: [
-        {
-          title: '第一章：地貌测量技术',
-          chapter: '1',
-          sections: [
-            { title: '1.1 传统测量方法', pageNumber: 1 },
-            { title: '1.2 现代遥感技术', pageNumber: 10 }
-          ]
-        },
-        {
-          title: '第二章：地貌分析',
-          chapter: '2',
-          sections: [
-            { title: '2.1 形态分析', pageNumber: 20 },
-            { title: '2.2 过程分析', pageNumber: 30 }
-          ]
-        }
-      ]
-    }
-  ]);
+  // 主要书籍和相关推荐书籍数据（从后端获取）
+  const books = ref<Book[]>([]);
+  const relatedBooks = ref<Book[]>([]);
   
   // 控制书籍详情弹窗
   const showBookModal = ref(false);
   const selectedBook = ref<Book | undefined>(undefined);
   
+  // 从后端 API 获取书籍列表
+  const loadBooks = async () => {
+    loading.value = true;
+    try {
+      const response = await bookApi.getAllBooks();
+      const apiBooks = response.books || [];
+      
+      // 转换为 Book 格式，添加默认封面
+      const convertedBooks: Book[] = apiBooks.map((apiBook: ApiBook) => ({
+        id: String(apiBook.id),  // 转换为字符串（BookViewer 需要）
+        title: apiBook.title || apiBook.name,
+        author: apiBook.author || '未知作者',
+        coverUrl: getDefaultCoverUrl(apiBook.id),  // 使用默认封面
+        description: apiBook.description || '',
+        chapters: [],  // 初始为空数组，BookViewer 会在 fetchAllMarkdownFiles 中自动构建
+      }));
+      
+      // 第一个书籍作为主要书籍
+      if (convertedBooks.length > 0) {
+        books.value = [convertedBooks[0]];
+        // 其余书籍作为相关推荐
+        relatedBooks.value = convertedBooks.slice(1);
+      } else {
+        // 如果没有书籍，显示空状态
+        books.value = [];
+        relatedBooks.value = [];
+      }
+      
+      console.log('📚 书籍列表加载成功:', {
+        总数: convertedBooks.length,
+        主要书籍: books.value.length,
+        相关推荐: relatedBooks.value.length
+      });
+    } catch (error: any) {
+      console.error('❌ 加载书籍列表失败:', error);
+      ElMessage.error(`加载书籍列表失败: ${error.message || '未知错误'}`);
+      books.value = [];
+      relatedBooks.value = [];
+    } finally {
+      loading.value = false;
+    }
+  };
+  
+  // 获取默认封面 URL（根据书籍 ID 或名称）
+  const getDefaultCoverUrl = (bookId: number): string => {
+    // 可以根据书籍 ID 或名称返回不同的默认封面
+    // 这里使用一个通用的默认封面，或者可以根据 bookId 返回不同的图片
+    const defaultCovers: Record<number, string> = {
+      1: '/images/板块构造与地貌形迹.jpg',
+      2: '/images/板块构造与地貌形迹下.jpg',
+      3: '/images/亚洲地貌圈及其板块造貌构造纲要.jpg',
+      4: '/images/地学新两论 上篇 板块造貌构造学-兼论板块学说新发展.jpg',
+    };
+    
+    return defaultCovers[bookId] || '/images/default-book-cover.jpg';
+  };
+  
   // 打开书籍详情
   const openBookDetails = (book: Book) => {
+    // book.id 已经是 string 类型，直接使用
     selectedBook.value = book;
     showBookModal.value = true;
   };
@@ -222,6 +194,18 @@
   const goBack = () => {
     router.push('/');
   };
+  
+  // 处理图片加载错误
+  const handleImageError = (event: Event) => {
+    const img = event.target as HTMLImageElement;
+    // 使用默认封面
+    img.src = '/images/default-book-cover.jpg';
+  };
+  
+  // 组件挂载时加载书籍列表
+  onMounted(() => {
+    loadBooks();
+  });
   </script>
   
   <style scoped>
@@ -247,6 +231,7 @@
     font-weight: 700;
     background: linear-gradient(135deg, #00e5b0 0%, #00a3ff 100%);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
     letter-spacing: 1px;
     flex-grow: 1;
@@ -462,6 +447,75 @@
     color: #666;
     font-size: 16px;
     text-align: center;
+  }
+  
+  .book-description {
+    margin: 10px 0;
+    color: #999;
+    font-size: 14px;
+    text-align: center;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  
+  /* 加载状态 */
+  .loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 100px 20px;
+    min-height: 400px;
+  }
+  
+  .spinner {
+    width: 48px;
+    height: 48px;
+    border: 4px solid #e5e7eb;
+    border-top-color: #00a3ff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 16px;
+  }
+  
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  
+  .loading-state p {
+    color: #6b7280;
+    font-size: 16px;
+  }
+  
+  /* 空状态 */
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 100px 20px;
+    min-height: 400px;
+  }
+  
+  .empty-icon {
+    font-size: 80px;
+    opacity: 0.3;
+    margin-bottom: 16px;
+  }
+  
+  .empty-state p {
+    font-size: 18px;
+    color: #9ca3af;
+    margin: 8px 0;
+  }
+  
+  .empty-hint {
+    font-size: 14px !important;
+    color: #6b7280 !important;
   }
   
   /* 弹窗样式 */

@@ -531,7 +531,7 @@
     title: string;
     author: string;
     coverUrl: string;
-    chapters: Chapter[];
+    chapters: Chapter[];  // chapters 是必需的，会在 fetchAllMarkdownFiles 中自动构建
   }
   
   interface MarkdownFile {
@@ -669,7 +669,7 @@
   // 获取所有 Markdown 文件
   const fetchAllMarkdownFiles = async () => {
     // 获取书籍ID，如果是字符串则转换为数字
-    const bookId = props.book ? parseInt(props.book.id) : 1;
+    const bookId = props.book ? (typeof props.book.id === 'string' ? parseInt(props.book.id) : props.book.id) : 1;
     
     console.log(`开始获取书籍 ${bookId} 的所有 Markdown 文件...`);
     
@@ -678,36 +678,14 @@
     
     try {
       console.log('开始获取所有 Markdown 文件...');
-      // 尝试不同的 API 路径
-      const possibleUrls = [
-        'http://localhost:8080/api/files/markdown',  // 原始路径
-        'http://localhost:8080/api/markdown',        // 简化路径
-        'http://localhost:8080/api/files'            // 通用文件路径
-      ];
+      // 使用正确的 API 路径，包含 bookId 参数
+      const baseUrl = 'http://localhost:8080/api/files/markdown';
+      const url = `${baseUrl}?bookId=${bookId}`;
       
-      let response: any = null;
-      let successUrl = '';
-      
-      // 尝试所有可能的 URL
-      for (const url of possibleUrls) {
-        try {
-          console.log(`尝试请求 URL: ${url}`);
-          response = await axios.get(url);
-          successUrl = url;
-          console.log(`成功从 ${url} 获取响应`);
-          break; // 如果成功，跳出循环
-        } catch (err) {
-          console.log(`从 ${url} 获取数据失败:`, err instanceof Error ? err.message : String(err));
-          // 继续尝试下一个 URL
-        }
-      }
-      
-      if (!response) {
-        throw new Error(`所有 API 路径尝试失败: ${possibleUrls.join(', ')}`);
-      }
-      
-      console.log(`使用成功的 URL: ${successUrl}`);
+      console.log(`请求 URL: ${url}`);
+      const response = await axios.get(url);
       console.log('API 响应:', response);
+      
       
       interface MarkdownResponse {
         files?: MarkdownFile[];
@@ -719,12 +697,21 @@
       
       if (data && data.files && data.files.length > 0) {
         console.log('成功获取 Markdown 文件:', data.files);
+        // 调试：打印第一个文件的完整结构
+        if (data.files.length > 0) {
+          console.log('第一个文件的完整结构:', JSON.stringify(data.files[0], null, 2));
+          console.log('第一个文件的 id 字段:', data.files[0].id, '类型:', typeof data.files[0].id);
+        }
         
         // 提取文件名
         const filesWithNames = data.files.map(file => {
           // 从文件路径中提取文件名
           const pathParts = file.file_path.split(/[\/\\]/);
           const fileName = pathParts[pathParts.length - 1];
+          // 调试：确认 file.id 存在
+          if (!file.id && file.id !== 0) {
+            console.warn('文件缺少 id 字段:', file);
+          }
           return {
             ...file,
             fileName
@@ -789,10 +776,18 @@
                   title = `${property} ${titleWithoutExt}`;
                 }
                 
+                // 调试：确认 fileId 设置正确
+                const fileId = file.id;
+                if (!fileId && fileId !== 0) {
+                  console.error('文件缺少 id 字段，无法设置 fileId:', file);
+                } else {
+                  console.log(`设置 section fileId: ${fileId} (${file.property || '未知属性'})`);
+                }
+                
                 return {
                   title: title,
                   pageNumber: 1, // 默认页码
-                  fileId: file.id
+                  fileId: fileId
                 };
               })
             };
@@ -1080,41 +1075,23 @@
       return;
     }
     
+    // 获取书籍ID
+    const bookId = props.book ? (typeof props.book.id === 'string' ? parseInt(props.book.id) : props.book.id) : 1;
+    
     summaryLoading.value = true;
     summaryError.value = '';
     showingSummary.value = true;
     currentSummaryProperty.value = property;
     
     try {
-      console.log(`开始获取章节 ${property} 的摘要...`);
+      console.log(`开始获取章节 ${property} 的摘要（书籍ID: ${bookId}）...`);
       
-      // 尝试不同的 API 路径，添加autoGenerate=true参数
-      const possibleUrls = [
-        `http://localhost:8080/api/files/summary/${property}?brief=false&autoGenerate=true`,
-        `http://localhost:8080/api/summary/${property}?brief=false&autoGenerate=true`,
-        `http://localhost:8080/api/files/${property}/summary?brief=false&autoGenerate=true`
-      ];
+      // 使用正确的 API 路径，包含 bookId 参数
+      const url = `http://localhost:8080/api/files/summary/${property}?brief=false&autoGenerate=true&bookId=${bookId}`;
       
-      let response: any = null;
-      let errorMessage = '';
-      
-      // 尝试所有可能的 URL
-      for (const url of possibleUrls) {
-        try {
-          console.log(`尝试请求摘要 URL: ${url}`);
-          response = await axios.get(url);
+      console.log(`请求摘要 URL: ${url}`);
+      const response = await axios.get(url);
           console.log('摘要 API 响应:', response);
-          break; // 如果成功，跳出循环
-        } catch (err: any) {
-          console.log(`从 ${url} 获取摘要失败:`, err instanceof Error ? err.message : String(err));
-          errorMessage = err.message;
-          // 继续尝试下一个 URL
-        }
-      }
-      
-      if (!response) {
-        throw new Error(`无法获取章节 ${property} 的摘要: ${errorMessage}`);
-      }
       
       const data = response.data as SummaryResponse;
       
@@ -1169,6 +1146,9 @@
       return;
     }
     
+    // 获取书籍ID
+    const bookId = props.book ? (typeof props.book.id === 'string' ? parseInt(props.book.id) : props.book.id) : 1;
+    
     // 显示正在生成摘要的提示
     loading.value = true;
     error.value = '正在批量生成摘要，请稍候...';
@@ -1193,7 +1173,7 @@
         });
       });
       
-      console.log('需要生成摘要的章节编号:', chapterProperties);
+      console.log(`需要生成摘要的章节编号（书籍ID: ${bookId}）:`, chapterProperties);
       
       // 批量生成摘要
       let succeeded = 0;
@@ -1201,34 +1181,16 @@
       
       for (const property of chapterProperties) {
         try {
-          // 尝试不同的 API 路径
-          const possibleUrls = [
-            `http://localhost:8080/api/files/summary/${property}?brief=false&autoGenerate=true`,
-            `http://localhost:8080/api/summary/${property}?brief=false&autoGenerate=true`,
-            `http://localhost:8080/api/files/${property}/summary?brief=false&autoGenerate=true`
-          ];
+          // 使用正确的 API 路径，包含 bookId 参数
+          const url = `http://localhost:8080/api/files/summary/${property}?brief=false&autoGenerate=true&bookId=${bookId}`;
           
-          let success = false;
-          
-          // 尝试所有可能的 URL
-          for (const url of possibleUrls) {
-            try {
               console.log(`尝试生成章节 ${property} 的摘要，URL: ${url}`);
               const response = await axios.get(url);
               if (response.data && (response.data as SummaryResponse).content) {
                 console.log(`成功生成章节 ${property} 的摘要`);
                 succeeded++;
-                success = true;
-                break;
-              }
-            } catch (err) {
-              console.log(`从 ${url} 生成摘要失败:`, err instanceof Error ? err.message : String(err));
-              // 继续尝试下一个 URL
-            }
-          }
-          
-          if (!success) {
-            console.error(`无法生成章节 ${property} 的摘要`);
+          } else {
+            console.error(`无法生成章节 ${property} 的摘要：响应中没有内容`);
             failed++;
           }
           
@@ -1389,6 +1351,9 @@
     showOriginalContent.value = true;
     
     try {
+      // 调试：打印 fileId 信息
+      console.log(`开始获取原文内容，fileId: ${section.fileId} (类型: ${typeof section.fileId})`);
+      
       // 构建API URL
       const url = `http://localhost:8080/api/files/markdown/${section.fileId}/content`;
       console.log('请求原文内容 URL:', url);
@@ -1396,17 +1361,30 @@
       const response = await axios.get(url);
       console.log('原文内容 API 响应:', response);
       
-      // 使用接口类型
+      // 后端返回的数据结构可能是 { content: "...", fileInfo: {...} } 或 { content: "..." }
       const data = response.data as ContentResponse;
       
       if (data && data.content) {
+        console.log('成功获取原文内容，长度:', data.content.length);
         originalContent.value = data.content;
+      } else if (response.data && typeof response.data === 'object') {
+        // 尝试从不同的字段获取内容
+        const content = (response.data as any).content || (response.data as any).data?.content;
+        if (content) {
+          console.log('从响应数据中提取原文内容，长度:', content.length);
+          originalContent.value = content;
+        } else {
+          originalContentError.value = '获取原文内容失败：响应格式不符合预期';
+          console.warn('响应中没有找到 content 字段:', response.data);
+        }
       } else {
         originalContentError.value = '获取原文内容失败：响应格式不符合预期';
       }
     } catch (err: any) {
       console.error('获取原文内容失败:', err);
       if (err.response) {
+        console.error('错误响应状态:', err.response.status);
+        console.error('错误响应数据:', err.response.data);
         originalContentError.value = `获取原文失败: ${err.response.status} - ${err.response.data?.error || '未知错误'}`;
       } else if (err.request) {
         originalContentError.value = '获取原文失败: 服务器未响应，请检查后端服务是否运行';
@@ -1648,32 +1626,40 @@
   // 获取章节内容
   const fetchSectionContent = async (fileId: number): Promise<string | null> => {
     try {
-      // 构建多个可能的URL，以适应不同的API路径格式
-      const possibleUrls = [
-        `http://localhost:8080/api/files/markdown/${fileId}/content`,
-        `http://localhost:8080/api/markdown/${fileId}/content`,
-        `http://localhost:8080/api/files/${fileId}/content`
-      ];
+      // 调试：打印 fileId 信息
+      console.log(`开始获取章节内容，fileId: ${fileId} (类型: ${typeof fileId})`);
       
-      let content = null;
-      let lastError = null;
+      // 只使用正确的 API 路径（根据后端实现）
+      const url = `http://localhost:8080/api/files/markdown/${fileId}/content`;
+      console.log('请求章节内容 URL:', url);
       
-      // 尝试所有可能的URL
-      for (const url of possibleUrls) {
-        try {
-          console.log('尝试获取章节内容，URL:', url);
+      try {
           const response = await axios.get(url);
+        console.log('章节内容 API 响应:', response);
+        
           const data = response.data as ContentResponse;
           
+        // 后端返回的数据结构可能是 { content: "...", fileInfo: {...} } 或 { content: "..." }
           if (data && data.content) {
-            console.log('成功获取章节内容');
+          console.log('成功获取章节内容，长度:', data.content.length);
             return data.content;
+        } else if (response.data && typeof response.data === 'object') {
+          // 尝试从不同的字段获取内容
+          const content = (response.data as any).content || (response.data as any).data?.content;
+          if (content) {
+            console.log('从响应数据中提取内容，长度:', content.length);
+            return content;
           }
-        } catch (err) {
-          console.log(`URL ${url} 请求失败:`, err);
-          lastError = err;
-          // 继续尝试下一个URL
         }
+        
+        console.warn('响应中没有找到 content 字段:', response.data);
+      } catch (err: any) {
+        console.error(`获取章节内容失败 (fileId: ${fileId}):`, err);
+        if (err.response) {
+          console.error('错误响应状态:', err.response.status);
+          console.error('错误响应数据:', err.response.data);
+        }
+        throw err; // 重新抛出错误，让调用者处理
       }
       
       // 如果所有URL都失败，但我们有章节信息，则尝试从章节信息中提取内容
@@ -1946,15 +1932,8 @@
   
   // 组件挂载时获取 Markdown 文件
   onMounted(async () => {
-    // 只有当书籍ID为1（板块构造与地貌形迹）时才尝试从后端获取数据
-    if (props.book && props.book.id === '1') {
-      try {
-        console.log('组件挂载，开始获取 Markdown 文件');
-        await fetchAllMarkdownFiles();
-      } catch (err) {
-        console.error('获取 Markdown 文件失败:', err);
-        // 如果获取失败，则使用预设数据
-        console.log('使用预设的书籍数据:', props.book);
+    // 初始化书籍数据
+    if (props.book) {
         selectedBook.value = props.book;
         
         // 确保封面URL正确
@@ -1965,27 +1944,34 @@
           }
         }
         
-        // 默认展开第一章
-        if (selectedBook.value.chapters.length > 0) {
-          expandedChapters.value[0] = true;
-        }
-      }
-    } else {
-      // 对于其他书籍，直接使用模拟数据
-      console.log('使用模拟书籍数据:', props.book);
-      selectedBook.value = props.book;
-      
-      // 确保封面URL正确
-      if (selectedBook.value && !selectedBook.value.coverUrl.startsWith('http')) {
-        // 如果不是绝对URL，确保路径正确
-        if (!selectedBook.value.coverUrl.startsWith('/')) {
-          selectedBook.value.coverUrl = '/' + selectedBook.value.coverUrl;
+      // 对于所有书籍，都尝试从后端获取 Markdown 文件
+      try {
+        const bookId = typeof props.book.id === 'string' ? parseInt(props.book.id) : props.book.id;
+        console.log(`组件挂载，开始获取书籍 ${bookId} (${props.book.title}) 的 Markdown 文件`);
+        await fetchAllMarkdownFiles();
+      } catch (err) {
+        console.error('获取 Markdown 文件失败:', err);
+        // 如果获取失败，使用预设数据（如果有）
+        console.log('使用预设的书籍数据:', props.book);
+        
+        // 如果预设数据中没有 chapters，显示提示
+        if (!selectedBook.value.chapters || selectedBook.value.chapters.length === 0) {
+          error.value = '该书籍暂无内容，请先在文件管理中心上传文件';
         }
       }
       
       // 默认展开第一章
-      if (selectedBook.value && selectedBook.value.chapters.length > 0) {
+      if (selectedBook.value && selectedBook.value.chapters && selectedBook.value.chapters.length > 0) {
         expandedChapters.value[0] = true;
+      }
+    } else {
+      // 如果没有传入书籍，创建一个默认书籍并尝试获取数据
+      console.log('未传入书籍，使用默认书籍ID=1');
+      try {
+        await fetchAllMarkdownFiles();
+      } catch (err) {
+        console.error('获取默认书籍数据失败:', err);
+        error.value = '无法加载书籍数据，请稍后重试';
       }
     }
     
@@ -2929,10 +2915,13 @@
       const match = section.title.match(/^(\d+(?:\.\d+)*)(\s|$)/);
       const chapterNo = match ? match[1] : '';
       if (chapterNo) {
+        // 获取书籍ID
+        const bookId = props.book ? (typeof props.book.id === 'string' ? parseInt(props.book.id) : props.book.id) : 1;
+        
         imagesLoading.value = true;
         try {
-          console.log(`请求章节 ${chapterNo} 的图片列表...`);
-          const res = await axios.get(`http://localhost:8080/api/files/chapter/${chapterNo}/images`);
+          console.log(`请求章节 ${chapterNo} 的图片列表（书籍ID: ${bookId}）...`);
+          const res = await axios.get(`http://localhost:8080/api/files/chapter/${chapterNo}/images?bookId=${bookId}`);
           const data = res.data as any;
           console.log('图片列表响应:', data);
           
@@ -2966,9 +2955,12 @@
       const match = section.title.match(/^(\d+(?:\.\d+)*)(\s|$)/);
       const chapterNo = match ? match[1] : '';
       if (chapterNo) {
+        // 获取书籍ID
+        const bookId = props.book ? (typeof props.book.id === 'string' ? parseInt(props.book.id) : props.book.id) : 1;
+        
         try {
-          console.log(`章节切换，请求章节 ${chapterNo} 的图片列表...`);
-          const res = await axios.get(`http://localhost:8080/api/files/chapter/${chapterNo}/images`);
+          console.log(`章节切换，请求章节 ${chapterNo} 的图片列表（书籍ID: ${bookId}）...`);
+          const res = await axios.get(`http://localhost:8080/api/files/chapter/${chapterNo}/images?bookId=${bookId}`);
           const data = res.data as any;
           console.log('章节切换图片列表响应:', data);
           

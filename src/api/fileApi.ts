@@ -57,21 +57,47 @@ export interface FileStatsResponse {
 // 通用请求处理
 async function handleRequest<T>(url: string, options: RequestInit = {}): Promise<T> {
   try {
+    console.log('[文件API请求]', url, options.method || 'GET');
+    
     const response = await fetch(url, {
       ...options,
       headers: {
+        // 不要设置 Content-Type，让浏览器自动设置（包含 boundary）
+        ...(options.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
         ...options.headers,
       },
     });
 
+    console.log('[文件API响应]', url, response.status, response.statusText);
+
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
+      let errorData: any = {};
+      try {
+        const text = await response.text();
+        if (text) {
+          errorData = JSON.parse(text);
+        }
+      } catch (e) {
+        // 如果无法解析 JSON，使用原始文本
+        errorData = { message: text || response.statusText };
+      }
       throw new Error(errorData.error || errorData.message || `HTTP ${response.status}: ${response.statusText}`);
     }
 
-    return await response.json();
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      return await response.json();
+    } else {
+      // 如果不是 JSON，返回文本
+      const text = await response.text();
+      return text as any;
+    }
   } catch (error: any) {
     console.error('[文件API错误]', url, error);
+    // 如果是网络错误，提供更友好的错误信息
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new Error('网络连接失败，请检查后端服务是否运行');
+    }
     throw error;
   }
 }
