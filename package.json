@@ -14,6 +14,7 @@
     "@turf/turf": "^7.2.0",
     "axios": "^1.7.9",
     "cors": "^2.8.5",
+    "echarts": "^6.0.0",
     "element-plus": "^2.9.3",
     "express": "^4.18.2",
     "jszip": "^3.10.1",

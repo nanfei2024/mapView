@@ -520,7 +520,13 @@ const processFile = async (file: UploadedFile, index: number) => {
     
     const fileId = uploadResponse.data.fileId;
     uploadedFiles.value[index].fileId = fileId;
+    
+    // 构建原始PDF访问URL（用于预览页面显示）
+    const backendBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+    uploadedFiles.value[index].sourceUrl = `${backendBaseUrl}/api/mineru/files/${fileId}`;
+    
     console.log('✅ 文件上传成功，fileId:', fileId);
+    console.log('📄 原始文件URL:', uploadedFiles.value[index].sourceUrl);
     
     // 阶段二：触发解析
     uploadedFiles.value[index].status = 'processing';
@@ -589,7 +595,13 @@ const processAllFiles = async () => {
         
         const fileId = uploadResponse.data.fileId;
         uploadedFiles.value[index].fileId = fileId;
+        
+        // 构建原始PDF访问URL（用于预览页面显示）
+        const backendBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+        uploadedFiles.value[index].sourceUrl = `${backendBaseUrl}/api/mineru/files/${fileId}`;
+        
         console.log(`✅ [${i + 1}/${pendingFiles.length}] 文件上传成功，fileId: ${fileId}`);
+        console.log(`📄 [${i + 1}/${pendingFiles.length}] 原始文件URL: ${uploadedFiles.value[index].sourceUrl}`);
         
         // 阶段二：触发解析（异步处理，不阻塞其他文件）
       uploadedFiles.value[index].status = 'processing';

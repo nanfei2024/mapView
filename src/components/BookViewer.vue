@@ -26,6 +26,7 @@
             <button :class="{active: catalogTab==='book'}" @click="catalogTab='book'">书籍目录</button>
             <button :class="{active: catalogTab==='figure'}" @click="catalogTab='figure'">图目录</button>
             <button :class="{active: catalogTab==='table'}" @click="catalogTab='table'">表目录</button>
+            <button :class="{active: catalogTab==='citation'}" @click="catalogTab='citation'">引文目录</button>
           </div>
           <div class="catalog-content">
             <template v-if="catalogTab==='book'">
@@ -175,6 +176,20 @@
                   {{ item.title }}
                 </li>
               </ul>
+            </template>
+            <template v-else-if="catalogTab==='citation'">
+              <!-- 使用CitationViewer组件 -->
+              <CitationViewer
+                v-if="hasSelectedSection && selectedBook"
+                :file-id="selectedBook.chapters[selectedChapter].sections[selectedSection].fileId"
+                :chapter-number="selectedBook.chapters[selectedChapter].sections[selectedSection].title.split(' ')[0]"
+                :book-id="props.book ? (typeof props.book.id === 'string' ? parseInt(props.book.id) : props.book.id) : 1"
+                @citation-selected="onCitationSelected"
+                @reference-clicked="onReferenceClicked"
+              />
+              <div v-else class="no-section-selected">
+                <p>请从左侧目录选择一个章节查看引文</p>
+              </div>
             </template>
           </div>
         </div>
@@ -496,8 +511,9 @@
   </template>
   
   <script setup lang="ts">
-  import { ref, defineProps, defineEmits, computed, onMounted, onUnmounted, watch, nextTick } from 'vue';
+  import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue';
   import axios from 'axios';
+  import CitationViewer from './CitationViewer.vue';
   
   // 定义接口
   interface TocItem {
@@ -2653,7 +2669,7 @@
   };
   
   // 新增三栏布局相关状态
-  const catalogTab = ref<'book'|'figure'|'table'>('book');
+  const catalogTab = ref<'book'|'figure'|'table'|'citation'>('book');
   
   // 图/表目录数据（基于后端返回的图片列表）
   const figureCatalog = computed(() => {
@@ -2757,6 +2773,18 @@
     centerType.value = 'table';
     centerTableHtml.value = item.html || item.title;
   }
+  
+  // 引文相关事件处理
+  const onCitationSelected = (citation: any) => {
+    console.log('选中引文:', citation);
+    // 可以在这里添加额外的逻辑，比如更新中间栏显示
+  };
+  
+  const onReferenceClicked = (reference: any) => {
+    console.log('点击引用位置:', reference);
+    // 可以在这里跳转到原文的对应位置
+    // 例如：自动切换到"查看原文"并滚动到对应位置
+  };
   
   // 新增状态
   const selectedFigureTitle = ref('');

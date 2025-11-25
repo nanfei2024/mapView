@@ -35,8 +35,13 @@
                 <p class="featured-book-description">
                   {{ books[0].description || '本书详细阐述了地质科学相关内容，包含丰富的章节和详细的内容。' }}
                 </p>
-                <div class="featured-book-button">
-                  查看详情
+                <div class="featured-book-buttons">
+                  <div class="featured-book-button" @click.stop="openBookDetails(books[0])">
+                    查看详情
+                  </div>
+                  <div class="featured-book-button knowledge-graph-btn" @click.stop="buildKnowledgeGraph(books[0])">
+                    知识图谱构建
+                  </div>
                 </div>
               </div>
             </div>
@@ -202,6 +207,19 @@
     img.src = '/images/default-book-cover.jpg';
   };
   
+  // 构建知识图谱
+  const buildKnowledgeGraph = (book: Book) => {
+    console.log('构建知识图谱:', book.title);
+    // 跳转到知识图谱页面
+    router.push({
+      path: '/knowledge-graph',
+      query: {
+        id: book.id,
+        title: book.title
+      }
+    });
+  };
+  
   // 组件挂载时加载书籍列表
   onMounted(() => {
     loadBooks();
@@ -342,8 +360,13 @@
     flex-grow: 1;
   }
   
-  .featured-book-button {
+  .featured-book-buttons {
+    display: flex;
+    gap: 15px;
     align-self: flex-start;
+  }
+  
+  .featured-book-button {
     padding: 12px 25px;
     background: linear-gradient(135deg, #00e5b0 0%, #00a3ff 100%);
     color: white;
@@ -353,11 +376,21 @@
     transition: all 0.3s ease;
     box-shadow: 0 4px 10px rgba(0, 163, 255, 0.2);
     text-align: center;
+    cursor: pointer;
   }
   
-  .featured-book-card:hover .featured-book-button {
+  .featured-book-button:hover {
     transform: translateY(-3px);
     box-shadow: 0 6px 15px rgba(0, 163, 255, 0.3);
+  }
+  
+  .featured-book-button.knowledge-graph-btn {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+    box-shadow: 0 4px 10px rgba(255, 107, 107, 0.2);
+  }
+  
+  .featured-book-button.knowledge-graph-btn:hover {
+    box-shadow: 0 6px 15px rgba(255, 107, 107, 0.3);
   }
   
   /* 章节标题 */
@@ -633,6 +666,15 @@
     .featured-book-cover {
       height: 300px;
       padding: 10px;
+    }
+    
+    .featured-book-buttons {
+      flex-direction: column;
+      width: 100%;
+    }
+    
+    .featured-book-button {
+      width: 100%;
     }
     
     .book-grid {
