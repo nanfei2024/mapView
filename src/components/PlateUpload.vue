@@ -91,8 +91,118 @@ async function refreshImportStatus() {
 onMounted(refreshImportStatus);
 </script>
 <style scoped>
-.plate-upload { padding: 12px; }
-.upload-section { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
-.upload-status { color: #67c23a; margin-top: 8px; }
-.import-status { color: #409eff; margin-top: 8px; font-size: 14px; }
+.plate-upload { 
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+}
+.plate-upload h4 {
+  margin: 0 0 20px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #fff;
+  padding-bottom: 12px;
+  border-bottom: 2px solid rgba(64, 158, 255, 0.3);
+}
+.upload-section { 
+  display: flex; 
+  gap: 12px; 
+  align-items: center; 
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.upload-section input[type="file"] {
+  flex: 1;
+  min-width: 200px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.upload-section input[type="file"]:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(64, 158, 255, 0.5);
+}
+.upload-section input[type="file"]::file-selector-button {
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #409eff 0%, #1890ff 100%);
+  border: none;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-right: 12px;
+  transition: all 0.3s ease;
+}
+.upload-section input[type="file"]::file-selector-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.4);
+}
+.upload-section select {
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 120px;
+}
+.upload-section select:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(64, 158, 255, 0.5);
+}
+.upload-section select option {
+  background: #2c3e50;
+  color: #fff;
+}
+.upload-section button {
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #409eff 0%, #1890ff 100%);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(64, 158, 255, 0.3);
+}
+.upload-section button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.5);
+}
+.upload-section button:active:not(:disabled) {
+  transform: translateY(0);
+}
+.upload-section button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.upload-status { 
+  color: #67c23a; 
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: rgba(103, 194, 58, 0.1);
+  border-left: 4px solid #67c23a;
+  border-radius: 6px;
+  font-size: 14px;
+}
+.import-status { 
+  color: #409eff; 
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: rgba(64, 158, 255, 0.1);
+  border-left: 4px solid #409eff;
+  border-radius: 6px;
+  font-size: 14px;
+  line-height: 1.6;
+}
 </style> 

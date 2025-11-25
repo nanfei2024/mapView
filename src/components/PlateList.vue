@@ -8,7 +8,47 @@
       <button @click="loadAllLevels">批量加载全部</button>
       <button @click="removeExistingLayers">清空所有板块</button>
     </div>
-    <div class="list-status">{{ statusMsg }}</div>
+    <div class="list-status" v-if="statusMsg">{{ statusMsg }}</div>
+    
+    <!-- 二级板块列表 -->
+    <div v-if="level2Plates.length > 0" class="plate-details-section">
+      <h5>📍 二级板块列表 ({{ level2Plates.length }}个)</h5>
+      <div class="plate-items-container">
+        <div v-for="(plate, index) in level2Plates" :key="index" class="plate-detail-item">
+          <div class="plate-detail-header">
+            <span class="plate-name">{{ plate.properties?.name || '未知板块' }}</span>
+            <span class="plate-code">代码: {{ plate.properties?.code || 'N/A' }}</span>
+          </div>
+          <div class="plate-chapter-info">
+            <span class="chapter-label">📖 关联章节:</span>
+            <span class="chapter-value">{{ plate.properties?.chapter || '暂无关联' }}</span>
+          </div>
+          <div class="plate-meta">
+            <span>📏 面积: {{ plate.properties?.area || 'N/A' }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 三级板块列表 -->
+    <div v-if="level3Plates.length > 0" class="plate-details-section">
+      <h5>📍 三级板块列表 ({{ level3Plates.length }}个)</h5>
+      <div class="plate-items-container">
+        <div v-for="(plate, index) in level3Plates" :key="index" class="plate-detail-item">
+          <div class="plate-detail-header">
+            <span class="plate-name">{{ plate.properties?.name || '未知板块' }}</span>
+            <span class="plate-code">代码: {{ plate.properties?.code || 'N/A' }}</span>
+          </div>
+          <div class="plate-chapter-info">
+            <span class="chapter-label">📖 关联章节:</span>
+            <span class="chapter-value">{{ plate.properties?.chapter || '暂无关联' }}</span>
+          </div>
+          <div class="plate-meta">
+            <span>📏 面积: {{ plate.properties?.area || 'N/A' }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 <script setup lang="ts">
@@ -16,6 +56,8 @@ import { ref } from 'vue';
 import { plateRegionApi } from '../api/plateRegionApi';
 const props = defineProps<{ map: any }>();
 const statusMsg = ref('');
+const level2Plates = ref<any[]>([]);
+const level3Plates = ref<any[]>([]);
 
 function getColorByLevel(level: number) {
   return { 1: '#ff0000', 2: '#00ff00', 3: '#0000ff' }[level] || '#888888';
@@ -35,6 +77,14 @@ async function loadGeoJsonByLevel(level: number) {
       statusMsg.value = `${level}级板块暂无数据`;
       return;
     }
+    
+    // 保存二级和三级板块数据用于显示列表
+    if (level === 2) {
+      level2Plates.value = geoJson.features;
+    } else if (level === 3) {
+      level3Plates.value = geoJson.features;
+    }
+    
     removeExistingLayers(level);
     try {
       props.map.addSource(`regions-level-${level}`, { type: 'geojson', data: geoJson });
@@ -115,7 +165,171 @@ async function loadAllLevels() {
 }
 </script>
 <style scoped>
-.plate-list { padding: 12px; }
-.level-actions button { margin-right: 8px; margin-bottom: 8px; }
-.list-status { color: #b0bec5; margin-top: 12px; }
+.plate-list { 
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+}
+.plate-list h4 {
+  margin: 0 0 20px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #fff;
+  padding-bottom: 12px;
+  border-bottom: 2px solid rgba(64, 158, 255, 0.3);
+}
+.level-actions { 
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.level-actions button { 
+  flex: 1;
+  min-width: 140px;
+  padding: 12px 20px;
+  background: linear-gradient(135deg, #409eff 0%, #1890ff 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(64, 158, 255, 0.3);
+}
+.level-actions button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.5);
+}
+.level-actions button:active {
+  transform: translateY(0);
+}
+.level-actions button:nth-child(4) {
+  background: linear-gradient(135deg, #67c23a 0%, #52a832 100%);
+  box-shadow: 0 2px 8px rgba(103, 194, 58, 0.3);
+}
+.level-actions button:nth-child(4):hover {
+  box-shadow: 0 4px 12px rgba(103, 194, 58, 0.5);
+}
+.level-actions button:nth-child(5) {
+  background: linear-gradient(135deg, #f56c6c 0%, #e84545 100%);
+  box-shadow: 0 2px 8px rgba(245, 108, 108, 0.3);
+}
+.level-actions button:nth-child(5):hover {
+  box-shadow: 0 4px 12px rgba(245, 108, 108, 0.5);
+}
+.list-status { 
+  color: #67c23a; 
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: rgba(103, 194, 58, 0.1);
+  border-left: 4px solid #67c23a;
+  border-radius: 6px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+/* 板块详情列表样式 */
+.plate-details-section {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 2px solid rgba(64, 158, 255, 0.3);
+}
+.plate-details-section h5 {
+  margin: 0 0 16px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.plate-items-container {
+  max-height: 400px;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+.plate-items-container::-webkit-scrollbar {
+  width: 6px;
+}
+.plate-items-container::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 3px;
+}
+.plate-items-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+.plate-items-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+.plate-detail-item {
+  background: rgba(255, 255, 255, 0.08);
+  margin-bottom: 12px;
+  padding: 16px;
+  border-radius: 8px;
+  border-left: 4px solid #409eff;
+  transition: all 0.3s ease;
+}
+.plate-detail-item:hover {
+  background: rgba(255, 255, 255, 0.12);
+  transform: translateX(4px);
+  box-shadow: 0 2px 8px rgba(64, 158, 255, 0.3);
+}
+.plate-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.plate-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+  flex: 1;
+  min-width: 150px;
+}
+.plate-code {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.6);
+  background: rgba(0, 0, 0, 0.3);
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+.plate-chapter-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  background: rgba(64, 158, 255, 0.1);
+  border-radius: 6px;
+  flex-wrap: wrap;
+}
+.chapter-label {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+}
+.chapter-value {
+  font-size: 14px;
+  color: #409eff;
+  font-weight: 600;
+  flex: 1;
+}
+.plate-meta {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.plate-meta span {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.6);
+  background: rgba(0, 0, 0, 0.3);
+  padding: 4px 10px;
+  border-radius: 6px;
+}
 </style> 
