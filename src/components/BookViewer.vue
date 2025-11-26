@@ -2789,16 +2789,111 @@
     console.log('选中引文:', citation);
     // 可以在这里添加额外的逻辑，比如更新中间栏显示
   };
-  
-  const onReferenceClicked = (reference: any) => {
+
+  const onReferenceClicked = async (reference: any) => {
     console.log('点击引用位置:', reference);
-    // 可以在这里跳转到原文的对应位置
-    // 例如：自动切换到"查看原文"并滚动到对应位置
+    
+    // 1. 如果原文未打开，则自动打开
+    if (!showOriginalContent.value) {
+      await fetchOriginalContent(selectedChapter.value, selectedSection.value);
+    }
+    
+    // 2. 等待DOM更新
+    await nextTick();
+    
+    // 3. 使用引用的完整上下文进行匹配（而不是只用citationText）
+    const contextToMatch = reference.context;  // 使用完整的上下文句子
+    const citationText = reference.citationText;
+    
+    if (!contextToMatch && !citationText) {
+      console.warn('引用上下文和引用文本均为空，无法定位');
+      return;
+    }
+    
+    console.log('查找目标:', { 上下文: contextToMatch, 引用标注: citationText });
+    
+    // 策略1: 先用完整上下文匹配（最准确）
+    let targetSentenceIndex = -1;
+    if (contextToMatch && contextToMatch.length > 10) {
+      // 提取上下文的关键部分（去掉引用标注本身）
+      const contextWithoutCitation = contextToMatch.replace(/[\[\(（［][^\]\)）］]*[\]\)）］]/g, '').trim();
+      
+      for (let i = 0; i < processedSentences.value.length; i++) {
+        const sentence = processedSentences.value[i];
+        if (sentence.text && sentence.text.includes(contextWithoutCitation.substring(0, 30))) {
+          targetSentenceIndex = i;
+          console.log(`✓ 通过上下文匹配找到句子 [${i}]`);
+          break;
+        }
+      }
+    }
+    
+    // 策略2: 如果上下文匹配失败，使用引用标注匹配
+    if (targetSentenceIndex === -1 && citationText) {
+      for (let i = 0; i < processedSentences.value.length; i++) {
+        const sentence = processedSentences.value[i];
+        if (sentence.text && sentence.text.includes(citationText)) {
+          targetSentenceIndex = i;
+          console.log(`✓ 通过引用标注匹配找到句子 [${i}]`);
+          break;
+        }
+      }
+    }
+    
+    // 策略3: 模糊匹配（去掉所有标点和空格）
+    if (targetSentenceIndex === -1) {
+      console.warn('精确匹配失败，尝试模糊匹配...');
+      const searchText = (contextToMatch || citationText).replace(/[\s\(\)\[\]（）［］【】，。！？；：、]/g, '');
+      
+      for (let i = 0; i < processedSentences.value.length; i++) {
+        const sentence = processedSentences.value[i];
+        const normalizedSentence = sentence.text.replace(/[\s\(\)\[\]（）［］【】，。！？；：、]/g, '');
+        
+        // 使用较长的匹配片段（至少20个字符）
+        if (searchText.length > 20 && normalizedSentence.includes(searchText.substring(0, 20))) {
+          targetSentenceIndex = i;
+          console.log(`✓ 通过模糊匹配找到句子 [${i}]`);
+          break;
+        }
+      }
+    }
+    
+    if (targetSentenceIndex !== -1) {
+      // 4. 高亮显示该句子
+      if (!highlightedSentences.value.includes(targetSentenceIndex)) {
+        highlightedSentences.value.push(targetSentenceIndex);
+      }
+      
+      // 5. 滚动到该句子
+      await nextTick();
+      const element = document.getElementById(`sentence-${targetSentenceIndex}`);
+      if (element) {
+        element.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center' 
+        });
+        
+        // 添加闪烁效果
+        element.classList.add('citation-flash');
+        setTimeout(() => {
+          element.classList.remove('citation-flash');
+        }, 2000);
+        
+        console.log(`✅ 成功跳转到句子 [${targetSentenceIndex}]: "${processedSentences.value[targetSentenceIndex].text.substring(0, 50)}..."`);
+      } else {
+        console.warn('未找到DOM元素:', `sentence-${targetSentenceIndex}`);
+      }
+    } else {
+      console.error('❌ 所有匹配策略均失败');
+      alert(`未找到引用在原文中的位置\n\n查找内容: ${contextToMatch || citationText}`);
+    }
   };
-  
+
   // 新增状态
   const selectedFigureTitle = ref('');
   const hoveredFigureTitle = ref('');
+
+// ...
   
   // 新增：章节图片列表
   const sectionImages = ref<any[]>([]);
@@ -4840,6 +4935,28 @@
   .sentence-clickable:hover {
     background: #e6f7ff;
     border-radius: 4px;
+  }
+  
+  /* 引用跳转闪烁效果 */
+  .citation-flash {
+    animation: citation-highlight 2s ease-in-out;
+  }
+  
+  @keyframes citation-highlight {
+    0%, 100% {
+      background: #fffbe6;
+    }
+    25% {
+      background: #fff566;
+      box-shadow: 0 0 10px rgba(255, 213, 0, 0.5);
+    }
+    50% {
+      background: #fffbe6;
+    }
+    75% {
+      background: #fff566;
+      box-shadow: 0 0 10px rgba(255, 213, 0, 0.5);
+    }
   }
   
   /* 引文目录相关样式 */

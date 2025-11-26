@@ -104,8 +104,10 @@ interface Citation {
 interface CitationReference {
   sectionTitle?: string;
   context: string;
-  position: number;
+  position: number;  // 在markdown中的行号
   sentenceIndex: number;
+  lineNumber: number;  // 具体行号（用于跳转）
+  citationText: string;  // 引用标注文本（用于高亮）
 }
 
 // Props
@@ -170,20 +172,26 @@ const extractCitations = (content: string): Citation[] => {
     const line = lines[i].trim();
     
     // 检测参考文献章节开始（支持更多变体）
-    if (/^##?\s*(参考文献|REFERENCES?|引用文献|文献|第.+章参考文献)/i.test(line)) {
+    if (/^##?\s*(参考文献|REFERENCES?|引用文献|文献资料|第.+章参考文献)/i.test(line)) {
       inReferenceSection = true;
+      console.log(`找到参考文献章节起始: 第${i+1}行`);
       continue;
     }
     
-    // 检测下一个章节开始（参考文献结束）
-    if (inReferenceSection && /^##?\s+/.test(line) && !/^##?\s*(参考文献|REFERENCES?)/i.test(line)) {
-      break;
+    // 优化：不在遇到新章节时停止，继续提取直到文件末尾
+    // 只跳过明显的章节标题行
+    if (inReferenceSection && /^##?\s+\d+[\.、\s]/.test(line)) {
+      // 这是一个带数字的章节标题，可能参考文献已结束
+      console.log(`检测到可能的章节标题: ${line}`);
+      // 不立即break，继续检查后续内容
     }
     
-    // 提取引文条目
+    // 提取引文条目（在参考文献章节内）
     if (inReferenceSection && line.length > 0) {
-      // 格式1：[1] 引文内容（传统格式）
-      const numberedMatch = line.match(/^\[(\d+)\]\s+(.+)$/);
+      let matched = false;
+      
+      // 格式1：[数字] 引文内容 或 (数字) 引文内容
+      const numberedMatch = line.match(/^[\[\(](\d+)[\]\)]\s*(.+)$/);
       if (numberedMatch) {
         const number = parseInt(numberedMatch[1]);
         const text = numberedMatch[2];
@@ -194,47 +202,130 @@ const extractCitations = (content: string): Citation[] => {
           text: text,
           rawText: line
         });
-        continue;
+        matched = true;
+        console.log(`提取编号引文[${number}]: ${text.substring(0, 50)}...`);
       }
       
-      // 格式2：作者，年份，其他信息（新格式）
-      // 匹配：作者名(可能包含英文),年份(4位数字),其余内容
-      const authorYearMatch = line.match(/^([^,，]+)[,，]\s*(\d{4})[,，\s]/);
-      if (authorYearMatch) {
-        const author = authorYearMatch[1].trim();
-        const year = authorYearMatch[2];
-        citationIndex++;
-        
-        citationList.push({
-          id: `citation-${author}-${year}`,
-          number: citationIndex,
-          text: line,
-          rawText: line,
-          author: author,
-          year: year
-        } as any);
-        continue;
+      // 格式2：作者，年份，内容（中文逗号）
+      if (!matched) {
+        const authorYearMatch = line.match(/^([^,，\d]{2,})[,，]\s*(\d{4})[,，\s]/);
+        if (authorYearMatch) {
+          let author = authorYearMatch[1].trim();
+          const year = authorYearMatch[2];
+          
+          // 清理作者名：移除"等"、"et al"等后缀
+          author = author.replace(/\s*(等|et\s*al\.?|and\s+others?)\.?\s*$/i, '').trim();
+          
+          // 如果作者名太短或只包含通用词，跳过
+          if (author.length < 2 || ['等', 'et al', 'etc'].includes(author)) {
+            console.log(`跳过无效作者名: ${author}`);
+          } else {
+            citationIndex++;
+            
+            citationList.push({
+              id: `citation-${author}-${year}-${citationIndex}`,
+              number: citationIndex,
+              text: line,
+              rawText: line,
+              author: author,
+              year: year
+            } as any);
+            matched = true;
+            console.log(`提取作者-年份引文: ${author}(${year})`);
+          }
+        }
       }
       
-      // 格式3：作者 年份 其他信息（空格分隔）
-      const authorYearSpaceMatch = line.match(/^([A-Za-z\.\s]+)[,，]\s*(\d{4})[,，]/);
-      if (authorYearSpaceMatch) {
-        const author = authorYearSpaceMatch[1].trim();
-        const year = authorYearSpaceMatch[2];
-        citationIndex++;
-        
-        citationList.push({
-          id: `citation-${author}-${year}`,
-          number: citationIndex,
-          text: line,
-          rawText: line,
-          author: author,
-          year: year
-        } as any);
+      // 格式3：纯数字开头（如：1 作者，年份）
+      if (!matched) {
+        const numberStartMatch = line.match(/^(\d{1,3})[\s\.、]\s*(.+)[,，]\s*(\d{4})/);
+        if (numberStartMatch) {
+          const number = parseInt(numberStartMatch[1]);
+          let author = numberStartMatch[2].trim();
+          const year = numberStartMatch[3];
+          
+          // 清理作者名
+          author = author.replace(/\s*(等|et\s*al\.?|and\s+others?)\.?\s*$/i, '').trim();
+          
+          // 只提取第一个逗号之前的内容作为作者名
+          if (author.includes(',') || author.includes('，')) {
+            author = author.split(/[,，]/)[0].trim();
+          }
+          
+          if (author.length >= 2) {
+            citationList.push({
+              id: `citation-${number}`,
+              number: number,
+              text: line.substring(numberStartMatch[0].indexOf(author)),
+              rawText: line,
+              author: author,
+              year: year
+            } as any);
+            matched = true;
+            console.log(`提取数字开头引文[${number}]: ${author}(${year})`);
+          }
+        }
+      }
+      
+      // 格式4：单独年份开头（1996,）
+      if (!matched && /^\d{4}[,，]/.test(line)) {
+        const yearMatch = line.match(/^(\d{4})[,，]\s*(.+)/);
+        if (yearMatch) {
+          const year = yearMatch[1];
+          const text = yearMatch[2];
+          citationIndex++;
+          
+          citationList.push({
+            id: `citation-year-${year}-${citationIndex}`,
+            number: citationIndex,
+            text: line,
+            rawText: line,
+            year: year
+          } as any);
+          matched = true;
+          console.log(`提取年份开头引文(${year}): ${text.substring(0, 50)}...`);
+        }
+      }
+      
+      // 格式5：包含作者和年份但格式不规则
+      if (!matched && /\d{4}/.test(line)) {
+        const flexibleMatch = line.match(/([^,，\d]{2,20})[,，\s]+(\d{4})/);
+        if (flexibleMatch) {
+          let author = flexibleMatch[1].trim();
+          const year = flexibleMatch[2];
+          
+          // 清理作者名
+          author = author.replace(/\s*(等|et\s*al\.?|and\s+others?)\.?\s*$/i, '').trim();
+          
+          // 只提取第一个作者（在逗号或"等"之前）
+          const firstAuthorMatch = author.match(/^([^,，]+?)(?:[,，]|等|et\s*al)/);
+          if (firstAuthorMatch) {
+            author = firstAuthorMatch[1].trim();
+          }
+          
+          // 验证作者名的有效性
+          if (author.length >= 2 && !['等', 'et al', 'etc', '见'].includes(author)) {
+            citationIndex++;
+            
+            citationList.push({
+              id: `citation-flex-${author}-${year}-${citationIndex}`,
+              number: citationIndex,
+              text: line,
+              rawText: line,
+              author: author,
+              year: year
+            } as any);
+            matched = true;
+            console.log(`提取灵活格式引文: ${author}(${year})`);
+          } else {
+            console.log(`跳过无效灵活格式作者: ${author}`);
+          }
+        }
       }
     }
   }
   
+  console.log(`总共提取 ${citationList.length} 条参考文献`);
   return citationList;
 };
 
@@ -268,41 +359,76 @@ const findCitationReferences = (citation: Citation) => {
   
   // 构建搜索模式
   let searchPatterns: RegExp[] = [];
+  let citationText = '';
   
   // 如果是传统[数字]格式
   if (citation.number && !citAny.author) {
     searchPatterns.push(new RegExp(`\\[${citation.number}\\]`, 'g'));
+    citationText = `[${citation.number}]`;
   }
   
   // 如果是作者-年份格式
   if (citAny.author && citAny.year) {
-    // 匹配: 作者(年份) 或 (作者,年份) 或 作者，年份
-    const author = citAny.author.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const author = citAny.author.trim();
     const year = citAny.year;
+    
+    // 过滤掉太短或太常见的作者名（避免误匹配）
+    if (author.length < 2 || ['等', 'et al', 'etc'].includes(author)) {
+      console.warn('作者名太短或太常见，跳过引用查找:', author);
+      citationReferences.value = [];
+      return;
+    }
+    
+    // 转义特殊字符
+    const escapedAuthor = author.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    
+    // 更严格的匹配规则（必须有明确的引用格式）
     searchPatterns.push(
-      new RegExp(`${author}\\s*\\(\\s*${year}`, 'gi'),
-      new RegExp(`\\(\\s*${author}\\s*,\\s*${year}`, 'gi'),
-      new RegExp(`${author}\\s*,\\s*${year}`, 'gi'),
-      new RegExp(`${author}\\s*${year}`, 'gi')
+      // 格式1: 作者(年份) 或 作者（年份）
+      new RegExp(`${escapedAuthor}\\s*[\\(（]\\s*${year}\\s*[\\)）]`, 'g'),
+      // 格式2: (作者,年份) 或 （作者，年份）
+      new RegExp(`[\\(（]\\s*${escapedAuthor}\\s*[,，]\\s*${year}\\s*[\\)）]`, 'g'),
+      // 格式3: (作者 年份) 或 （作者 年份）
+      new RegExp(`[\\(（]\\s*${escapedAuthor}\\s+${year}\\s*[\\)）]`, 'g'),
+      // 格式4: [作者,年份] 或 ［作者，年份］
+      new RegExp(`[\\[［]\\s*${escapedAuthor}\\s*[,，]\\s*${year}\\s*[\\]］]`, 'g')
     );
+    citationText = `${author}(${year})`;
+    
+    console.log('作者-年份格式搜索:', author, year);
   }
   
   let currentSection = '';
+  let inReferenceSection = false;
   
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
+    
+    // 检测是否进入参考文献章节（跳过参考文献章节的搜索）
+    if (/^##?\s*(参考文献|REFERENCES?|引用文献)/i.test(line)) {
+      inReferenceSection = true;
+    }
     
     // 更新当前小节标题
     const sectionMatch = line.match(/^#{1,6}\s+(.+)/);
     if (sectionMatch && !sectionMatch[1].includes('参考文献')) {
       currentSection = sectionMatch[1].trim();
+      inReferenceSection = false;  // 新章节开始，重置参考文献标记
+    }
+    
+    // 跳过参考文献章节
+    if (inReferenceSection) {
+      continue;
     }
     
     // 查找引用
     let foundMatch = false;
+    let matchedText = '';
     for (const pattern of searchPatterns) {
-      if (pattern.test(line)) {
+      const match = pattern.exec(line);
+      if (match) {
         foundMatch = true;
+        matchedText = match[0];
         pattern.lastIndex = 0; // 重置
         break;
       }
@@ -311,23 +437,49 @@ const findCitationReferences = (citation: Citation) => {
     if (foundMatch) {
       // 提取上下文（当前句子）
       const sentences = line.split(/[。！？；.!?;]/);
-      for (const sentence of sentences) {
+      for (let si = 0; si < sentences.length; si++) {
+        const sentence = sentences[si].trim();
+        if (!sentence) continue;
+        
         let matchesInSentence = false;
+        let sentenceMatchedText = '';
         for (const pattern of searchPatterns) {
-          if (pattern.test(sentence)) {
+          const match = pattern.exec(sentence);
+          if (match) {
             matchesInSentence = true;
+            sentenceMatchedText = match[0];
             pattern.lastIndex = 0;
             break;
           }
         }
         
         if (matchesInSentence) {
-          references.push({
-            sectionTitle: currentSection,
-            context: sentence.trim(),
-            position: i,
-            sentenceIndex: references.length
-          });
+          // 额外验证：对于作者-年份格式，确保是真正的引用上下文
+          let isValidReference = true;
+          if (citAny.author && citAny.year) {
+            // 检查是否包含引用相关的关键词或格式
+            const hasReferenceContext = 
+              /[\(（\[［]/.test(sentenceMatchedText) ||  // 包含括号
+              /研究|指出|认为|提出|发现|表明|显示|指出|根据|参考|见|如|详见/.test(sentence) ||  // 包含引用相关动词
+              sentence.length < 200;  // 句子不能太长（避免误匹配到描述性文本）
+            
+            if (!hasReferenceContext) {
+              console.log(`跳过疑似非引用上下文: ${sentence.substring(0, 50)}...`);
+              isValidReference = false;
+            }
+          }
+          
+          if (isValidReference) {
+            references.push({
+              sectionTitle: currentSection,
+              context: sentence,
+              position: i,
+              lineNumber: i + 1,  // 行号从1开始
+              sentenceIndex: references.length,
+              citationText: sentenceMatchedText || citationText
+            });
+            console.log(`✓ 找到引用: 行${i+1}, 小节"${currentSection}", 匹配:"${sentenceMatchedText}"`);
+          }
         }
       }
     }
@@ -340,7 +492,18 @@ const findCitationReferences = (citation: Citation) => {
 // 滚动到引用位置
 const scrollToReference = (index: number) => {
   const ref = citationReferences.value[index];
+  console.log('点击引用位置:', {
+    行号: ref.lineNumber,
+    小节: ref.sectionTitle,
+    引用文本: ref.citationText,
+    上下文: ref.context
+  });
+  
+  // 发送事件给父组件，包含完整的引用信息
   emit('referenceClicked', ref);
+  
+  // 提示：父组件需要监听 @referenceClicked 事件并实现跳转逻辑
+  // 例如：滚动到指定行号、高亮显示引用文本
 };
 
 // 监听 fileId 变化，自动加载引文
