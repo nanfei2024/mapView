@@ -40,8 +40,8 @@
                       title="生成超细化目录"
                       v-if="selectedBook && selectedBook.chapters && selectedBook.chapters.length > 0"
                     >
-                      <span>🔍</span>
-                      <span>超细化目录</span>
+                      <span class="btn-icon">⚡</span>
+                      <span class="btn-text">超细化目录</span>
                     </button>
                     <button 
                       class="export-toc-btn" 
@@ -49,8 +49,8 @@
                       title="导出目录"
                       v-if="selectedBook && selectedBook.chapters && selectedBook.chapters.length > 0"
                     >
-                      <span>📥</span>
-                      <span>导出目录</span>
+                      <span class="btn-icon">↓</span>
+                      <span class="btn-text">导出目录</span>
                     </button>
                   </div>
                 </div>
@@ -216,6 +216,16 @@
           <div v-else-if="centerType==='table'">
             <div v-if="centerTableHtml" v-html="centerTableHtml"></div>
             <div v-else class="center-placeholder">请选择表目录项</div>
+          </div>
+          <div v-else-if="centerType==='citation'" class="citation-preview-panel">
+            <div v-if="selectedCitationContent" class="citation-content-wrapper">
+              <div class="citation-text-display">{{ selectedCitationContent.text }}</div>
+              <div v-if="selectedCitationContent.context" class="citation-context">
+                <h5>上下文：</h5>
+                <p>{{ selectedCitationContent.context }}</p>
+              </div>
+            </div>
+            <div v-else class="center-placeholder">请选择引文目录项</div>
           </div>
           <div v-else class="center-placeholder">请选择目录项</div>
         </div>
@@ -2739,7 +2749,7 @@
   }
   
   // 中间区展示内容
-  const centerType = ref<'figure'|'table'|''>('');
+  const centerType = ref<'figure'|'table'|'citation'|''>('');
   const centerFigureUrl = ref('');
   const centerTableHtml = ref('');
   
@@ -3165,9 +3175,9 @@
     background: #f3f6fa;
   }
   .catalog-area {
-    flex: 0 0 24%;
-    min-width: 220px;
-    max-width: 340px;
+    flex: 0 0 30%;
+    min-width: 320px;
+    max-width: 450px;
     height: 100%;
     min-height: 0;
     display: flex;
@@ -3182,14 +3192,66 @@
     flex: 1;
     min-height: 0;
     overflow-y: auto;
-    padding: 16px 12px 16px 16px;
+    padding: 16px 20px 16px 20px;
     scrollbar-width: thin;
     scrollbar-color: #b2ebf2 #f6f8fa;
   }
+  .catalog-content::-webkit-scrollbar {
+    width: 8px;
+  }
+  .catalog-content::-webkit-scrollbar-track {
+    background: #f6f8fa;
+    border-radius: 4px;
+  }
+  .catalog-content::-webkit-scrollbar-thumb {
+    background: #b2ebf2;
+    border-radius: 4px;
+    transition: background 0.3s;
+  }
+  .catalog-content::-webkit-scrollbar-thumb:hover {
+    background: #80deea;
+  }
+  
+  /* 目录标签样式 */
+  .catalog-tabs {
+    display: flex;
+    gap: 8px;
+    padding: 16px 16px 12px 16px;
+    background: #f6f8fa;
+    border-bottom: 2px solid #e5e7eb;
+  }
+  .catalog-tabs button {
+    flex: 1;
+    padding: 10px 16px;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+  }
+  .catalog-tabs button:hover {
+    background: #f0f9ff;
+    color: #1890ff;
+    border-color: #b2ebf2;
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(24, 144, 255, 0.15);
+  }
+  .catalog-tabs button.active {
+    background: linear-gradient(135deg, #00e5b0 0%, #00a3ff 100%);
+    color: #fff;
+    border-color: #00a3ff;
+    box-shadow: 0 4px 12px rgba(0, 163, 255, 0.3);
+    font-weight: 600;
+  }
+  
   .center-area {
-    flex: 0 0 38%;
-    min-width: 320px;
-    max-width: 600px;
+    flex: 0 0 35%;
+    min-width: 350px;
+    max-width: 650px;
     background: #fff;
     border-right: 1.5px solid #e5e7eb;
     border-left: 1.5px solid #e5e7eb;
@@ -3197,7 +3259,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
-    padding: 32px 16px;
+    padding: 32px 20px;
     box-shadow: 0 0 8px rgba(0,0,0,0.04);
     border-radius: 0;
     min-height: 0;
@@ -3280,29 +3342,54 @@
     display: block;
   }
   .right-area {
-    flex: 1 1 38%;
-    min-width: 320px;
-    background: #f9fafb;
-    display: flex;
-    flex-direction: column;
-    padding: 32px 24px;
-    box-sizing: border-box;
-    min-height: 0;
+    flex: 1;
+    min-width: 400px;
+    padding: 28px 32px 28px 28px;
+    background: #f6f8fa;
     overflow-y: auto;
     border-radius: 0 16px 16px 0;
     height: 100%;
+  }
+  .right-area::-webkit-scrollbar {
+    width: 10px;
+  }
+  .right-area::-webkit-scrollbar-track {
+    background: #f6f8fa;
+    border-radius: 5px;
+  }
+  .right-area::-webkit-scrollbar-thumb {
+    background: #b2ebf2;
+    border-radius: 5px;
+    transition: background 0.3s;
+  }
+  .right-area::-webkit-scrollbar-thumb:hover {
+    background: #80deea;
   }
   .book-detail-section {
     background: #fff;
     border-radius: 12px;
     box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-    padding: 32px 28px 24px 28px;
-    min-height: 400px;
+    padding: 40px 48px 40px 48px;
+    min-height: calc(100vh - 250px);
     flex: 1;
     display: flex;
     flex-direction: column;
-    min-height: 0;
     overflow-y: auto;
+  }
+  .book-detail-section::-webkit-scrollbar {
+    width: 10px;
+  }
+  .book-detail-section::-webkit-scrollbar-track {
+    background: #f9f9f9;
+    border-radius: 5px;
+  }
+  .book-detail-section::-webkit-scrollbar-thumb {
+    background: #b2ebf2;
+    border-radius: 5px;
+    transition: background 0.3s;
+  }
+  .book-detail-section::-webkit-scrollbar-thumb:hover {
+    background: #80deea;
   }
   .book-viewer-content {
     flex: 1;
@@ -3373,13 +3460,14 @@
     height: 100%;
   }
   .book-toc-section {
-    flex: 0 0 35%;
-    background-color: white;
-    border-radius: 12px;
-    padding: 25px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-    overflow-y: auto;
-    max-height: 600px;
+    flex: 1;
+    background-color: transparent;
+    border-radius: 0;
+    padding: 0;
+    box-shadow: none;
+    overflow-y: visible;
+    max-height: none;
+    height: 100%;
   }
   .book-detail-section {
     flex: 0 0 65%;
@@ -3392,11 +3480,15 @@
   }
   .book-toc-section h4, .book-detail-section h4 {
     margin-top: 0;
-    margin-bottom: 20px;
-    font-size: 20px;
-    color: #333;
-    border-bottom: 1px solid #eee;
-    padding-bottom: 10px;
+    margin-bottom: 24px;
+    font-size: 22px;
+    font-weight: 600;
+    color: #0277bd;
+    border-bottom: 2px solid #e0f7fa;
+    padding-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
   }
   .book-toc ul {
     list-style: none;
@@ -3409,20 +3501,30 @@
   .chapter-title {
     display: flex;
     justify-content: space-between;
+    align-items: flex-start;
     padding: 12px 16px;
     background-color: #f5f5f5;
-    border-radius: 6px;
+    border-radius: 8px;
     cursor: pointer;
     font-weight: 500;
-    transition: background-color 0.2s ease;
+    transition: all 0.3s ease;
+    word-wrap: break-word;
+    word-break: break-word;
+    white-space: normal;
+    line-height: 1.6;
+    gap: 12px;
   }
   .chapter-title:hover {
-    background-color: #eee;
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f7fa 100%);
+    transform: translateX(4px);
+    box-shadow: 0 2px 8px rgba(0, 163, 255, 0.15);
   }
   .chapter-title.active {
-    background-color: #e0f7fa;
+    background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
     color: #0277bd;
-    border-left: 3px solid #00a3ff;
+    border-left: 4px solid #00a3ff;
+    box-shadow: 0 2px 8px rgba(0, 163, 255, 0.2);
+    font-weight: 600;
   }
   .chapter-sections {
     padding-left: 25px !important;
@@ -3432,18 +3534,27 @@
     padding: 10px 16px;
     border-left: 2px solid #ddd;
     margin-bottom: 6px;
-    transition: all 0.2s ease;
+    transition: all 0.3s ease;
     cursor: pointer;
+    word-wrap: break-word;
+    word-break: break-word;
+    white-space: normal;
+    line-height: 1.5;
   }
   .chapter-sections li:hover {
-    border-left-color: #00a3ff;
-    background-color: #f9f9f9;
+    border-left: 3px solid #00a3ff;
+    background: linear-gradient(90deg, #f0f9ff 0%, #ffffff 100%);
+    transform: translateX(4px);
+    box-shadow: 0 2px 6px rgba(0, 163, 255, 0.1);
+    padding-left: 15px;
   }
   .chapter-sections li.active {
-    border-left-color: #00a3ff;
-    background-color: #e0f7fa;
+    border-left: 3px solid #00a3ff;
+    background: linear-gradient(90deg, #e0f7fa 0%, #f0f9ff 100%);
     color: #0277bd;
-    font-weight: 500;
+    font-weight: 600;
+    box-shadow: 0 2px 6px rgba(0, 163, 255, 0.15);
+    padding-left: 15px;
   }
   .toggle-icon {
     font-size: 12px;
@@ -3452,27 +3563,151 @@
     padding: 10px;
   }
   .section-title {
-    font-size: 22px;
-    color: #333;
+    font-size: 28px;
+    font-weight: 600;
+    color: #1a1a1a;
     margin-top: 0;
-    margin-bottom: 20px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid #eee;
+    margin-bottom: 28px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid #e0f7fa;
+    line-height: 1.4;
   }
   .section-content {
-    font-size: 16px;
-    line-height: 1.8;
-    color: #444;
+    font-size: 17px;
+    line-height: 2;
+    color: #333;
     margin-bottom: 30px;
+    letter-spacing: 0.3px;
   }
   .section-content p {
-    margin-bottom: 20px;
+    margin-bottom: 24px;
+    text-align: justify;
   }
   .section-content strong {
-    color: #333;
-    font-size: 18px;
+    color: #1a1a1a;
+    font-size: 19px;
+    font-weight: 600;
     display: inline-block;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
+  }
+  /* 优化章节内容中的各种元素 */
+  .section-content h1 {
+    font-size: 26px;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-top: 32px;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #e0f7fa;
+  }
+  .section-content h2 {
+    font-size: 23px;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-top: 28px;
+    margin-bottom: 18px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  .section-content h3 {
+    font-size: 20px;
+    font-weight: 600;
+    color: #333;
+    margin-top: 24px;
+    margin-bottom: 16px;
+  }
+  .section-content h4 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+    margin-top: 20px;
+    margin-bottom: 14px;
+  }
+  .section-content ul, .section-content ol {
+    margin: 20px 0;
+    padding-left: 32px;
+    line-height: 2;
+  }
+  .section-content li {
+    margin-bottom: 12px;
+    color: #333;
+  }
+  .section-content code {
+    background: #f5f5f5;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 15px;
+    color: #e83e8c;
+    border: 1px solid #e8e8e8;
+  }
+  .section-content pre {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 24px 0;
+    border: 1px solid #e8e8e8;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  }
+  .section-content pre code {
+    background: none;
+    padding: 0;
+    border: none;
+    color: #333;
+    font-size: 15px;
+    line-height: 1.8;
+  }
+  .section-content blockquote {
+    margin: 24px 0;
+    padding: 16px 24px;
+    background: #f0f9ff;
+    border-left: 4px solid #1890ff;
+    border-radius: 4px;
+    color: #555;
+    font-style: italic;
+  }
+  .section-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    margin: 24px 0;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+  .section-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 24px 0;
+    font-size: 16px;
+  }
+  .section-content table th {
+    background: #f0f9ff;
+    color: #0277bd;
+    font-weight: 600;
+    padding: 14px;
+    text-align: left;
+    border: 1px solid #e0f7fa;
+  }
+  .section-content table td {
+    padding: 12px 14px;
+    border: 1px solid #e8e8e8;
+    color: #333;
+  }
+  .section-content table tr:nth-child(even) {
+    background: #fafafa;
+  }
+  .section-content table tr:hover {
+    background: #f0f9ff;
+  }
+  .section-content a {
+    color: #1890ff;
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: all 0.3s ease;
+  }
+  .section-content a:hover {
+    color: #40a9ff;
+    border-bottom-color: #40a9ff;
   }
   .section-navigation {
     display: flex;
@@ -3690,26 +3925,38 @@
   .section-title-wrapper {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
     width: 100%;
+    gap: 8px;
   }
   .section-title-content {
     flex: 1;
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
+    word-wrap: break-word;
+    word-break: break-word;
+    white-space: normal;
+    line-height: 1.5;
+    gap: 8px;
   }
   .subsection-title {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
     width: 100%;
+    gap: 8px;
   }
   .subsection-title-content {
     flex: 1;
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
+    word-wrap: break-word;
+    word-break: break-word;
+    white-space: normal;
+    line-height: 1.5;
+    gap: 8px;
   }
   .toggle-icon.small {
     font-size: 10px;
@@ -3828,37 +4075,62 @@
     align-items: center;
     justify-content: space-between;
     margin-bottom: 20px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid #eee;
+    padding: 12px 16px;
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f7fa 100%);
+    border-radius: 8px;
+    border-bottom: 2px solid #00a3ff;
+    box-shadow: 0 2px 8px rgba(0, 163, 255, 0.1);
   }
   .toc-header h4 {
     margin: 0;
-    font-size: 20px;
-    color: #333;
+    font-size: 18px;
+    font-weight: 600;
+    color: #0277bd;
   }
-  .export-toc-btn {
+  .toc-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  .export-toc-btn, .detailed-toc-btn {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 6px;
-    background-color: #1890ff;
+    background: linear-gradient(135deg, #1890ff 0%, #096dd9 100%);
     color: white;
     border: none;
-    border-radius: 4px;
-    padding: 6px 12px;
-    font-size: 13px;
+    border-radius: 8px;
+    padding: 10px 18px;
+    font-size: 14px;
+    font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s ease;
-    box-shadow: 0 2px 0 rgba(0, 0, 0, 0.045);
+    transition: all 0.3s ease;
+    box-shadow: 0 3px 8px rgba(24, 144, 255, 0.35);
+    min-width: 130px;
+    height: 40px;
   }
-  .export-toc-btn:hover {
-    background-color: #40a9ff;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  .export-toc-btn .btn-icon, .detailed-toc-btn .btn-icon {
+    font-size: 16px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
-  .export-toc-btn:active {
-    background-color: #096dd9;
+  .export-toc-btn .btn-text, .detailed-toc-btn .btn-text {
+    font-size: 14px;
+    line-height: 1;
+    white-space: nowrap;
+  }
+  .export-toc-btn:hover, .detailed-toc-btn:hover {
+    background: linear-gradient(135deg, #40a9ff 0%, #1890ff 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(24, 144, 255, 0.45);
+  }
+  .export-toc-btn:active, .detailed-toc-btn:active {
+    background: linear-gradient(135deg, #096dd9 0%, #0050b3 100%);
     transform: translateY(0);
-    box-shadow: 0 2px 0 rgba(0, 0, 0, 0.045);
+    box-shadow: 0 2px 6px rgba(24, 144, 255, 0.3);
   }
   /* 添加显示原文按钮样式 */
   .show-original-btn {
@@ -4484,8 +4756,13 @@
     color: #b0b6c3;
     text-align: center;
     width: 100%;
-    font-size: 1.1em;
-    padding: 40px 0;
+    height: 100%;
+    font-size: 1.2em;
+    padding: 40px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(100vh - 250px);
   }
   
   /* 图目录相关样式 */
@@ -4512,10 +4789,14 @@
     display: flex;
     align-items: flex-start;
     gap: 8px;
-    padding: 8px 12px;
-    border-radius: 6px;
-    transition: all 0.2s ease;
-    margin-bottom: 4px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    margin-bottom: 6px;
+    word-wrap: break-word;
+    word-break: break-word;
+    white-space: normal;
+    line-height: 1.6;
   }
   
   .catalog-content ul li:hover {
@@ -4559,5 +4840,68 @@
   .sentence-clickable:hover {
     background: #e6f7ff;
     border-radius: 4px;
+  }
+  
+  /* 引文目录相关样式 */
+  .no-citations-message {
+    text-align: center;
+    color: #999;
+    padding: 20px;
+    font-style: italic;
+  }
+  
+  .citation-icon {
+    margin-right: 8px;
+    font-size: 14px;
+  }
+  
+  .citation-text {
+    font-size: 13px;
+    line-height: 1.4;
+    word-break: break-word;
+  }
+  
+  .citation-preview-panel {
+    padding: 20px;
+    height: 100%;
+    overflow-y: auto;
+  }
+  
+  .citation-content-wrapper {
+    background: #fff;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .citation-text-display {
+    font-size: 16px;
+    line-height: 1.8;
+    color: #333;
+    padding: 15px;
+    background: #f9f9f9;
+    border-left: 4px solid #1890ff;
+    border-radius: 4px;
+    margin-bottom: 20px;
+  }
+  
+  .citation-context {
+    margin-top: 20px;
+  }
+  
+  .citation-context h5 {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 10px;
+  }
+  
+  .citation-context p {
+    font-size: 14px;
+    line-height: 1.6;
+    color: #555;
+    padding: 10px;
+    background: #fafafa;
+    border-radius: 4px;
+    white-space: pre-wrap;
   }
   </style> 

@@ -64,80 +64,158 @@ onMounted(refresh);
 
 <style scoped>
 .plate-stat { 
-  padding: 12px; 
-  max-height: 400px;
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  max-height: calc(100vh - 300px);
   overflow-y: auto;
 }
-
-.stat-item { 
-  margin-bottom: 8px; 
-  color: #fff; 
+.plate-stat::-webkit-scrollbar {
+  width: 6px;
 }
-
+.plate-stat::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 3px;
+}
+.plate-stat::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+.plate-stat::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+.plate-stat h4 {
+  margin: 0 0 20px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #fff;
+  padding-bottom: 12px;
+  border-bottom: 2px solid rgba(64, 158, 255, 0.3);
+}
+.stat-item { 
+  margin-bottom: 12px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  color: #fff;
+  font-size: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.3s ease;
+}
+.stat-item:hover {
+  background: rgba(255, 255, 255, 0.12);
+  transform: translateX(4px);
+}
+.stat-item span {
+  font-weight: 600;
+  color: #409eff;
+  font-size: 18px;
+}
 button { 
-  margin-top: 8px; 
-  margin-right: 8px;
-  padding: 6px 12px;
-  background: #409eff;
+  margin-top: 12px; 
+  margin-right: 12px;
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #409eff 0%, #1890ff 100%);
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(64, 158, 255, 0.3);
 }
-
+button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.5);
+}
+button:active {
+  transform: translateY(0);
+}
 .load-details-btn {
-  background: #67c23a;
+  background: linear-gradient(135deg, #67c23a 0%, #52a832 100%);
+  box-shadow: 0 2px 8px rgba(103, 194, 58, 0.3);
 }
-
+.load-details-btn:hover {
+  box-shadow: 0 4px 12px rgba(103, 194, 58, 0.5);
+}
 .stat-status { 
-  color: #f56c6c; 
-  margin-top: 8px; 
-  font-size: 14px; 
-}
-
-.level1-details {
+  color: #67c23a; 
   margin-top: 16px;
-  border-top: 1px solid #444;
-  padding-top: 12px;
+  padding: 12px 16px;
+  background: rgba(103, 194, 58, 0.1);
+  border-left: 4px solid #67c23a;
+  border-radius: 6px;
+  font-size: 14px;
+  line-height: 1.6;
 }
-
+.level1-details {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 2px solid rgba(64, 158, 255, 0.3);
+}
 .level1-details h5 {
   color: #fff;
-  margin-bottom: 12px;
-  font-size: 14px;
+  margin: 0 0 16px 0;
+  font-size: 16px;
+  font-weight: 600;
 }
-
 .plate-list {
-  max-height: 200px;
+  max-height: 300px;
   overflow-y: auto;
+  padding-right: 8px;
 }
-
+.plate-list::-webkit-scrollbar {
+  width: 6px;
+}
+.plate-list::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 3px;
+}
+.plate-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+.plate-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
 .plate-item {
-  background: rgba(255,255,255,0.1);
-  margin-bottom: 8px;
-  padding: 8px;
-  border-radius: 4px;
-  border-left: 3px solid #409eff;
+  background: rgba(255, 255, 255, 0.08);
+  margin-bottom: 12px;
+  padding: 14px;
+  border-radius: 8px;
+  border-left: 4px solid #409eff;
+  transition: all 0.3s ease;
 }
-
+.plate-item:hover {
+  background: rgba(255, 255, 255, 0.12);
+  transform: translateX(4px);
+  box-shadow: 0 2px 8px rgba(64, 158, 255, 0.2);
+}
 .plate-name {
   color: #fff;
-  font-weight: bold;
-  margin-bottom: 4px;
-  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  font-size: 15px;
 }
-
 .plate-info {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  font-size: 12px;
+  font-size: 13px;
   color: #ccc;
 }
-
 .plate-info span {
-  background: rgba(0,0,0,0.3);
-  padding: 2px 6px;
-  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 4px 10px;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+}
+.plate-info span:hover {
+  background: rgba(64, 158, 255, 0.2);
+  color: #409eff;
 }
 </style> 
