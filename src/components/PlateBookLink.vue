@@ -149,6 +149,8 @@ interface Chapter {
   path: string;
   fileId?: number;
   markdownUrl?: string;
+  parentChapter?: string; // 父章节编号，如 "4.5"
+  subsection?: string;    // 小节编号，如 "4.5.2.4.D"
 }
 
 interface PlateLink {
@@ -196,6 +198,14 @@ const renderedMarkdown = computed(() => {
   return marked(markdownContent.value) as string;
 });
 
+// 辅助函数：从章节编号提取父章节
+function extractParentChapter(chapterTitle: string): string | null {
+  // 例如: "4.5.2.4.D" -> "4.5"
+  // 例如: "2.2.5.2.B" -> "2.2"
+  const match = chapterTitle.match(/^(\d+\.\d+)/);
+  return match ? match[1] : null;
+}
+
 // 加载板块书籍关联数据
 async function loadPlateBookLinks() {
   loading.value = true;
@@ -205,24 +215,7 @@ async function loadPlateBookLinks() {
   try {
     console.log('开始加载板块关联数据...');
     
-    // 1. 获取第一本书的所有md文件
-    const mdFilesUrl = 'http://localhost:8080/api/files/markdown?bookId=1';
-    const mdResponse = await axios.get(mdFilesUrl);
-    console.log('获取到的第一本书md文件列表:', mdResponse.data);
-    
-    const mdFiles = mdResponse.data?.files || [];
-    
-    // 创建property到fileId的映射
-    const propertyToFileMap = new Map<string, any>();
-    mdFiles.forEach((file: any) => {
-      if (file.property && file.id) {
-        propertyToFileMap.set(file.property, file);
-      }
-    });
-    
-    console.log('Property到文件的映射:', propertyToFileMap);
-    
-    // 2. 定义板块与property的映射关系（前端配置，无需后端接口）
+    // 定义板块与章节的映射关系（前端配置）
     const plateData = [
       {
         plateName: '澳洲',
@@ -340,7 +333,12 @@ async function loadPlateBookLinks() {
         plateCode: 'BDH',
         level: 3,
         chapters: [
-          { title: '4.5.2.4.D', path: '/books/geology/4.5.2.4.D.md' }
+          { 
+            title: '4.5.2.4.D', 
+            path: '/books/geology/4.5.2.4.D.md',
+            parentChapter: '4.5',
+            subsection: '4.5.2.4.D'
+          }
         ]
       },
       {
@@ -348,7 +346,7 @@ async function loadPlateBookLinks() {
         plateCode: 'BDYD',
         level: 3,
         chapters: [
-          { title: '4.5.2.3.C', path: '/books/geology/4.5.2.3.C.md' }
+          { title: '4.5.2.3.C', path: '/books/geology/4.5.2.3.C.md', parentChapter: '4.5', subsection: '4.5.2.3.C' }
         ]
       },
       {
@@ -356,7 +354,7 @@ async function loadPlateBookLinks() {
         plateCode: 'MJLW',
         level: 3,
         chapters: [
-          { title: '2.2.5.2.B', path: '/books/geology/2.2.5.2.B.md' }
+          { title: '2.2.5.2.B', path: '/books/geology/2.2.5.2.B.md', parentChapter: '2.2', subsection: '2.2.5.2.B' }
         ]
       },
       {
@@ -364,7 +362,7 @@ async function loadPlateBookLinks() {
         plateCode: 'XM_BDM',
         level: 3,
         chapters: [
-          { title: '4.5.2.1.A', path: '/books/geology/4.5.2.1.A.md' }
+          { title: '4.5.2.1.A', path: '/books/geology/4.5.2.1.A.md', parentChapter: '4.5', subsection: '4.5.2.1.A' }
         ]
       },
       {
@@ -372,7 +370,7 @@ async function loadPlateBookLinks() {
         plateCode: 'ALB',
         level: 3,
         chapters: [
-          { title: '2.1.2.3.H', path: '/books/geology/2.1.2.3.H.md' }
+          { title: '2.1.2.3.H', path: '/books/geology/2.1.2.3.H.md', parentChapter: '2.1', subsection: '2.1.2.3.H' }
         ]
       },
       {
@@ -380,7 +378,7 @@ async function loadPlateBookLinks() {
         plateCode: 'YZBD',
         level: 3,
         chapters: [
-          { title: '4.5.2.2.B', path: '/books/geology/4.5.2.2.B.md' }
+          { title: '4.5.2.2.B', path: '/books/geology/4.5.2.2.B.md', parentChapter: '4.5', subsection: '4.5.2.2.B' }
         ]
       },
       {
@@ -495,39 +493,62 @@ async function loadPlateBookLinks() {
       }
     ];
     
-    // 3. 为每个章节匹配fileId
-    plateData.forEach((plate: PlateLink) => {
-      if (plate.chapters && plate.chapters.length > 0) {
-        plate.chapters = plate.chapters.map((chapter: Chapter) => {
-          const property = chapter.title; // title即为property
-          const fileInfo = propertyToFileMap.get(property);
-          
-          if (fileInfo) {
-            return {
-              ...chapter,
-              fileId: fileInfo.id,
-              path: fileInfo.file_path
-            };
-          }
-          return chapter;
-        });
-      }
-    });
+    // 尝试从后端获取文件ID映射（如果后端可用）
+    try {
+      const mdFilesUrl = 'http://localhost:8080/api/files/markdown?bookId=1';
+      const mdResponse = await axios.get(mdFilesUrl, { timeout: 3000 });
+      console.log('✅ 后端连接成功，获取到md文件列表:', mdResponse.data);
+      
+      const mdFiles = mdResponse.data?.files || [];
+      
+      // 创建property到fileId的映射
+      const propertyToFileMap = new Map<string, any>();
+      mdFiles.forEach((file: any) => {
+        if (file.property && file.id) {
+          propertyToFileMap.set(file.property, file);
+        }
+      });
+      
+      console.log('Property到文件的映射:', propertyToFileMap);
+      
+      // 为每个章节匹配fileId
+      plateData.forEach((plate: PlateLink) => {
+        if (plate.chapters && plate.chapters.length > 0) {
+          plate.chapters = plate.chapters.map((chapter: Chapter) => {
+            const property = chapter.title;
+            const fileInfo = propertyToFileMap.get(property);
+            
+            if (fileInfo) {
+              return {
+                ...chapter,
+                fileId: fileInfo.id,
+                path: fileInfo.file_path
+              };
+            }
+            return chapter;
+          });
+        }
+      });
+      
+      const chaptersWithFile = plateData.reduce((count, plate) => {
+        return count + (plate.chapters?.filter(c => c.fileId).length || 0);
+      }, 0);
+      
+      statusMsg.value = `成功加载 ${plateData.length} 个板块，匹配到 ${chaptersWithFile} 个章节文件`;
+      
+    } catch (apiError) {
+      console.warn('⚠️ 后端未连接，使用前端模拟数据展示:', apiError);
+      statusMsg.value = `成功加载 ${plateData.length} 个板块（演示模式）`;
+    }
     
     plateLinks.value = plateData;
-    
-    // 统计有fileId的章节数
-    const chaptersWithFile = plateLinks.value.reduce((count, plate) => {
-      return count + (plate.chapters?.filter(c => c.fileId).length || 0);
-    }, 0);
     
     // 默认展开第一个板块
     if (plateLinks.value.length > 0) {
       expandedPlates.value['l2-0'] = true;
     }
     
-    statusMsg.value = `成功加载 ${plateLinks.value.length} 个板块的关联信息，匹配到 ${chaptersWithFile} 个章节文件`;
-    console.log('处理后的板块数据:', plateLinks.value);
+    console.log('最终板块数据:', plateLinks.value);
     
   } catch (error: any) {
     isError.value = true;
@@ -552,17 +573,6 @@ function togglePlate(key: string) {
 async function jumpToChapter(chapter: Chapter, plateName?: string) {
   console.log('跳转到章节:', chapter);
   
-  // 如果没有fileId，提示用户
-  if (!chapter.fileId) {
-    statusMsg.value = `章节 ${chapter.title} 暂无关联的文档ID`;
-    isError.value = true;
-    setTimeout(() => {
-      statusMsg.value = '';
-      isError.value = false;
-    }, 3000);
-    return;
-  }
-  
   try {
     jumpingChapter.value = chapter.title;
     viewerLoading.value = true;
@@ -574,19 +584,81 @@ async function jumpToChapter(chapter: Chapter, plateName?: string) {
       plateName
     };
     
-    // 直接调用正确的文件内容API
-    const url = `http://localhost:8080/api/files/markdown/${chapter.fileId}/content`;
-    console.log('请求章节内容 URL:', url);
+    let content = '';
+    let parentChapter = chapter.parentChapter || extractParentChapter(chapter.title);
     
-    const response = await axios.get(url);
-    const content = response.data?.content || '';
+    // 判断是否为三级板块（需要两级跳转）
+    const isThirdLevel = chapter.title.split('.').length > 2 || /[A-Z]$/.test(chapter.title);
     
-    console.log('获取到的章节内容长度:', content.length);
+    if (isThirdLevel && parentChapter) {
+      console.log(`🎯 三级板块跳转: ${chapter.title} -> 父章节: ${parentChapter}`);
+      
+      // 第一步：获取父章节的fileId
+      try {
+        const mdFilesUrl = `http://localhost:8080/api/files/markdown?bookId=1`;
+        const mdResponse = await axios.get(mdFilesUrl, { timeout: 3000 });
+        const mdFiles = mdResponse.data?.files || [];
+        
+        // 查找父章节的fileId
+        const parentFile = mdFiles.find((file: any) => file.property === parentChapter);
+        
+        if (parentFile && parentFile.id) {
+          console.log(`✅ 找到父章节文件: ${parentChapter}, fileId: ${parentFile.id}`);
+          
+          // 第二步：获取父章节的完整内容
+          const parentUrl = `http://localhost:8080/api/files/markdown/${parentFile.id}/content`;
+          const parentResponse = await axios.get(parentUrl, { timeout: 5000 });
+          const fullContent = parentResponse.data?.content || '';
+          
+          console.log(`✅ 获取父章节内容，长度: ${fullContent.length}`);
+          
+          // 第三步：提取目标小节的内容
+          const subsectionContent = extractSubsection(fullContent, chapter.title);
+          
+          if (subsectionContent) {
+            content = subsectionContent;
+            console.log(`✅ 成功定位到小节 ${chapter.title}，内容长度: ${content.length}`);
+          } else {
+            // 如果没找到小节，显示整个父章节内容
+            content = fullContent;
+            console.warn(`⚠️ 未找到小节 ${chapter.title}，显示完整父章节内容`);
+          }
+          
+        } else {
+          throw new Error(`未找到父章节 ${parentChapter} 的文件`);
+        }
+        
+      } catch (apiError) {
+        console.warn('⚠️ 三级板块跳转失败，使用模拟内容:', apiError);
+        content = generateMockContent(chapter, plateName);
+      }
+      
+    } else {
+      // 二级板块的原有逻辑
+      if (chapter.fileId) {
+        try {
+          const url = `http://localhost:8080/api/files/markdown/${chapter.fileId}/content`;
+          console.log('📡 请求章节内容 URL:', url);
+          
+          const response = await axios.get(url, { timeout: 5000 });
+          content = response.data?.content || '';
+          
+          console.log('✅ 成功获取章节内容，长度:', content.length);
+          
+        } catch (apiError) {
+          console.warn('⚠️ 后端API调用失败，使用模拟内容:', apiError);
+          content = generateMockContent(chapter, plateName);
+        }
+      } else {
+        console.log('ℹ️ 章节无fileId，使用模拟内容');
+        content = generateMockContent(chapter, plateName);
+      }
+    }
     
     // 设置Markdown内容
     markdownContent.value = content;
     
-    // 同时通过emit事件通知父组件（如果父组件需要）
+    // 通过emit事件通知父组件
     emit('open-chapter', chapter, content);
     
     statusMsg.value = `成功加载章节: ${chapter.title}`;
@@ -597,9 +669,10 @@ async function jumpToChapter(chapter: Chapter, plateName?: string) {
     }, 2000);
     
   } catch (error: any) {
-    console.error('加载章节失败:', error);
+    console.error('❌ 加载章节失败:', error);
     statusMsg.value = `加载章节失败: ${error.message || '未知错误'}`;
     isError.value = true;
+    showViewer.value = false;
     
     setTimeout(() => {
       statusMsg.value = '';
@@ -609,6 +682,89 @@ async function jumpToChapter(chapter: Chapter, plateName?: string) {
     jumpingChapter.value = null;
     viewerLoading.value = false;
   }
+}
+
+// 从完整章节内容中提取指定小节
+function extractSubsection(fullContent: string, subsectionTitle: string): string | null {
+  // 将内容按行分割
+  const lines = fullContent.split('\n');
+  
+  // 查找小节标题的位置
+  let startIndex = -1;
+  let endIndex = lines.length;
+  
+  // 匹配小节标题（可能是 # 4.5.2.4.D 或 ## 4.5.2.4.D 等）
+  const titlePattern = new RegExp(`^#{1,6}\\s*${subsectionTitle.replace(/\./g, '\\.')}`, 'i');
+  
+  for (let i = 0; i < lines.length; i++) {
+    if (titlePattern.test(lines[i])) {
+      startIndex = i;
+      break;
+    }
+  }
+  
+  if (startIndex === -1) {
+    console.warn(`未找到小节标题: ${subsectionTitle}`);
+    return null;
+  }
+  
+  // 查找下一个同级或更高级标题的位置作为结束位置
+  const startLevel = (lines[startIndex].match(/^#+/) || ['#'])[0].length;
+  
+  for (let i = startIndex + 1; i < lines.length; i++) {
+    const match = lines[i].match(/^(#+)\s/);
+    if (match && match[1].length <= startLevel) {
+      endIndex = i;
+      break;
+    }
+  }
+  
+  // 提取小节内容
+  const subsectionLines = lines.slice(startIndex, endIndex);
+  return subsectionLines.join('\n');
+}
+
+// 生成模拟的Markdown内容
+function generateMockContent(chapter: Chapter, plateName?: string): string {
+  return `# ${chapter.title}
+
+## 板块：${plateName || '未知板块'}
+
+这是 **${chapter.title}** 章节的内容。
+
+### 主要内容
+
+- 地质构造分析
+- 板块运动特征  
+- 地层分布情况
+- 矿产资源分布
+
+### 详细说明
+
+本章节详细介绍了${plateName || '该'}板块的地质特征和演化历史。
+
+#### 地质特征
+
+${plateName}板块具有独特的地质构造特征，包括：
+
+1. **构造单元**：主要由古老的克拉通和造山带组成
+2. **岩石类型**：以变质岩和沉积岩为主
+3. **地质年代**：形成于古生代至新生代
+
+#### 演化历史
+
+板块经历了多次构造运动和地质演化过程。
+
+> **提示**：当前为演示模式，显示的是模拟数据。
+> 
+> 连接后端服务器后将显示真实的地质学内容。
+
+---
+
+**章节路径**: \`${chapter.path}\`
+
+**章节编号**: ${chapter.title}
+`;
 }
 
 // 关闭Markdown查看器
