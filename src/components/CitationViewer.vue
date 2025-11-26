@@ -1,10 +1,21 @@
 <template>
-  <div class="citation-viewer">
-    <!-- 引文目录列表 -->
-    <div class="citation-catalog">
+  <div class="citation-viewer-wrapper">
+    <div class="citation-viewer-three-column">
+    <!-- 左栏：引文目录 -->
+    <div class="citation-catalog-panel">
       <div class="catalog-header">
-        <h4>引文目录</h4>
-        <span class="citation-count">{{ citations.length }} 条</span>
+        <div class="header-left">
+          <h4>引文目录</h4>
+          <span class="citation-count">{{ citations.length }} 条</span>
+        </div>
+        <button 
+          v-if="selectedCitation" 
+          @click="clearSelection" 
+          class="clear-selection-btn"
+          title="清除选择"
+        >
+          ✕
+        </button>
       </div>
       
       <div v-if="loading" class="loading-indicator">
@@ -27,62 +38,214 @@
           :class="{ 'active': selectedCitation?.id === citation.id }"
           @click="selectCitation(citation)"
         >
-          <span class="citation-number">
-            <template v-if="citation.author">📚</template>
-            <template v-else>[{{ citation.number }}]</template>
-          </span>
-          <span class="citation-text">
-            <template v-if="citation.author">
-              <strong>{{ citation.author }}</strong> ({{ citation.year }})
-            </template>
-            <template v-else>{{ citation.text }}</template>
-          </span>
+          <div class="citation-header">
+            <span class="citation-number">
+              <template v-if="citation.author">📚</template>
+              <template v-else>[{{ citation.number }}]</template>
+            </span>
+            <span class="citation-text">
+              <template v-if="citation.author">
+                <strong>{{ citation.author }}</strong> ({{ citation.year }})
+              </template>
+              <template v-else>{{ citation.text.substring(0, 50) }}...</template>
+            </span>
+          </div>
+          <!-- 文献文件指示器 -->
+          <div class="citation-file-indicator" v-if="citation.fileUrl">
+            <span class="file-icon">📄</span>
+            <span class="file-status">已关联文献</span>
+          </div>
+          <div class="citation-file-indicator no-file" v-else>
+            <span class="file-icon">📤</span>
+            <span class="file-status">未上传文献</span>
+          </div>
         </li>
       </ul>
     </div>
     
-    <!-- 引文详情和上下文 -->
-    <div class="citation-detail" v-if="selectedCitation">
-      <div class="detail-header">
-        <h4>引文详情</h4>
-        <button @click="clearSelection" class="close-btn">×</button>
+    <!-- 中栏：参考文献原文 -->
+    <div class="literature-viewer-panel">
+      <div class="panel-header">
+        <h4>参考文献原文</h4>
+        <button 
+          v-if="selectedCitation && !selectedCitation.fileUrl" 
+          @click="showUploadDialog = true"
+          class="upload-btn"
+        >
+          📤 上传文献
+        </button>
       </div>
       
-      <div class="citation-info">
-        <div class="citation-full">
-          <span class="label">完整引文：</span>
-          <p>[{{ selectedCitation.number }}] {{ selectedCitation.text }}</p>
+      <div v-if="!selectedCitation" class="placeholder">
+        <p>👈 请从左侧选择一条引文</p>
+      </div>
+      
+      <div v-else-if="!selectedCitation.fileUrl" class="no-literature">
+        <div class="upload-prompt">
+          <p class="prompt-icon">📚</p>
+          <p class="prompt-text">该参考文献尚未上传原文</p>
+          <button @click="showUploadDialog = true" class="upload-btn-large">
+            点击上传PDF或文本文件
+          </button>
         </div>
       </div>
       
-      <!-- 引用位置列表 -->
-      <div class="citation-references" v-if="citationReferences.length > 0">
-        <h5>正文引用位置 ({{ citationReferences.length }}处)</h5>
-        <div class="reference-list">
-          <div 
-            v-for="(ref, index) in citationReferences" 
-            :key="index"
-            class="reference-item"
-            @click="scrollToReference(index)"
-          >
-            <div class="reference-section" v-if="ref.sectionTitle">
-              <span class="section-icon">📍</span>
-              {{ ref.sectionTitle }}
-            </div>
-            <div class="reference-context">
-              {{ ref.context }}
+      <div v-else class="literature-content">
+        <!-- PDF文件显示 -->
+        <iframe 
+          v-if="selectedCitation.fileType === 'pdf'"
+          :src="selectedCitation.fileUrl"
+          class="pdf-viewer"
+          frameborder="0"
+        ></iframe>
+        
+        <!-- 文本文件显示 -->
+        <div v-else-if="selectedCitation.fileType === 'text'" class="text-viewer">
+          <pre>{{ literatureText }}</pre>
+        </div>
+        
+        <!-- 其他格式提示 -->
+        <div v-else class="unsupported-format">
+          <p>不支持的文件格式</p>
+          <a :href="selectedCitation.fileUrl" target="_blank" class="download-link">
+            下载查看
+          </a>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 右栏：引用详情和分析 -->
+    <div class="reference-analysis-panel">
+      <div class="panel-header">
+        <h4>正文引用分析</h4>
+      </div>
+      
+      <div v-if="!selectedCitation" class="placeholder">
+        <p>请选择引文</p>
+      </div>
+      
+      <div v-else class="analysis-content">
+        <!-- 完整引文信息 -->
+        <div class="citation-full-info">
+          <div class="info-label">完整引文</div>
+          <div class="info-content">
+            [{{ selectedCitation.number }}] {{ selectedCitation.text }}
+          </div>
+        </div>
+        
+        <!-- 正文引用位置列表 -->
+        <div class="references-section">
+          <div class="section-header">
+            <h5>正文引用位置</h5>
+            <span class="ref-count">{{ citationReferences.length }}处</span>
+          </div>
+          
+          <div v-if="citationReferences.length === 0" class="no-references">
+            <p>正文中未找到此引文的引用</p>
+          </div>
+          
+          <div v-else class="reference-list">
+            <div 
+              v-for="(ref, index) in citationReferences" 
+              :key="index"
+              class="reference-item"
+              @click="handleReferenceClick(ref, index)"
+            >
+              <!-- 小节标题 -->
+              <div class="ref-section" v-if="ref.sectionTitle">
+                <span class="section-icon">📍</span>
+                {{ ref.sectionTitle }}
+              </div>
+              
+              <!-- 引用上下文 -->
+              <div class="ref-context">
+                <span class="context-text">{{ ref.context }}</span>
+                <span class="citation-mark">{{ ref.citationText }}</span>
+              </div>
+              
+              <!-- 引用类型分析 -->
+              <div class="ref-analysis">
+                <div class="analysis-label">引用类型：</div>
+                <div class="analysis-buttons">
+                  <button 
+                    :class="['analysis-btn', { 'active': ref.analysisType === 'exact' }]"
+                    @click.stop="setAnalysisType(index, 'exact')"
+                    title="引用内容与原文高度一致"
+                  >
+                    ✓ 完全引用
+                  </button>
+                  <button 
+                    :class="['analysis-btn', { 'active': ref.analysisType === 'paraphrase' }]"
+                    @click.stop="setAnalysisType(index, 'paraphrase')"
+                    title="表达了相同的意思但措辞不同"
+                  >
+                    ≈ 意思引用
+                  </button>
+                  <button 
+                    :class="['analysis-btn', { 'active': ref.analysisType === 'irrelevant' }]"
+                    @click.stop="setAnalysisType(index, 'irrelevant')"
+                    title="引用与原文内容无关"
+                  >
+                    ✗ 无关引用
+                  </button>
+                </div>
+              </div>
+              
+              <!-- 跳转按钮 -->
+              <div class="ref-actions">
+                <button class="jump-btn" @click.stop="scrollToReference(index)">
+                  → 跳转到原文
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
-      
-      <div v-else class="no-references">
-        <p>正文中未找到此引文的引用</p>
-      </div>
     </div>
     
-    <div v-else class="citation-placeholder">
-      <p>👆 请选择一条引文查看详情</p>
+    </div>
+    
+    <!-- 文献上传对话框 -->
+    <div v-if="showUploadDialog" class="upload-dialog-overlay" @click="showUploadDialog = false">
+      <div class="upload-dialog" @click.stop>
+        <div class="dialog-header">
+          <h4>上传参考文献原文</h4>
+          <button @click="showUploadDialog = false" class="close-btn">×</button>
+        </div>
+        <div class="dialog-body">
+          <p class="upload-hint">
+            为引文 <strong>[{{ selectedCitation?.number }}]</strong> 上传原始文献文件
+          </p>
+          <div class="upload-area">
+            <input 
+              type="file" 
+              ref="fileInput" 
+              @change="handleFileSelect"
+              accept=".pdf,.txt,.doc,.docx"
+              class="file-input"
+            />
+            <div class="upload-prompt-area" @click="$refs.fileInput?.click()">
+              <p class="upload-icon">�</p>
+              <p>点击选择文件或拖拽文件到此处</p>
+              <p class="file-types">支持格式: PDF, TXT, DOC, DOCX</p>
+            </div>
+          </div>
+          <div v-if="selectedFile" class="selected-file">
+            <span class="file-name">{{ selectedFile.name }}</span>
+            <span class="file-size">{{ formatFileSize(selectedFile.size) }}</span>
+          </div>
+        </div>
+        <div class="dialog-footer">
+          <button @click="showUploadDialog = false" class="cancel-btn">取消</button>
+          <button 
+            @click="uploadLiteratureFile" 
+            :disabled="!selectedFile || uploading"
+            class="confirm-btn"
+          >
+            {{ uploading ? '上传中...' : '确认上传' }}
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -99,6 +262,9 @@ interface Citation {
   rawText: string;
   author?: string;   // 作者名（用于新格式）
   year?: string;     // 年份（用于新格式）
+  fileUrl?: string;  // 文献文件URL
+  fileType?: 'pdf' | 'text' | 'other';  // 文件类型
+  fileName?: string; // 文件名
 }
 
 interface CitationReference {
@@ -108,6 +274,7 @@ interface CitationReference {
   sentenceIndex: number;
   lineNumber: number;  // 具体行号（用于跳转）
   citationText: string;  // 引用标注文本（用于高亮）
+  analysisType?: 'exact' | 'paraphrase' | 'irrelevant';  // 引用类型分析
 }
 
 // Props
@@ -130,6 +297,13 @@ const citations = ref<Citation[]>([]);
 const selectedCitation = ref<Citation | null>(null);
 const citationReferences = ref<CitationReference[]>([]);
 const markdownContent = ref('');
+
+// 文献上传相关状态
+const showUploadDialog = ref(false);
+const selectedFile = ref<File | null>(null);
+const uploading = ref(false);
+const literatureText = ref('');  // 文本文件内容
+const fileInput = ref<HTMLInputElement | null>(null);
 
 // 加载引文
 const loadCitations = async () => {
@@ -330,11 +504,16 @@ const extractCitations = (content: string): Citation[] => {
 };
 
 // 选择引文
-const selectCitation = (citation: Citation) => {
+const selectCitation = async (citation: Citation) => {
   selectedCitation.value = citation;
   
   // 在正文中查找引用位置
   findCitationReferences(citation);
+  
+  // 如果有关联的文献文件，加载文献内容
+  if (citation.fileUrl && citation.fileType === 'text') {
+    await loadLiteratureText(citation.fileUrl);
+  }
   
   // 触发事件
   emit('citationSelected', citation);
@@ -516,6 +695,113 @@ watch(() => props.fileId, (newFileId) => {
   }
 }, { immediate: true });
 
+// 加载文本文件内容
+const loadLiteratureText = async (url: string) => {
+  try {
+    const response = await axios.get(url);
+    literatureText.value = response.data;
+  } catch (err) {
+    console.error('加载文献文本失败:', err);
+    literatureText.value = '加载文献内容失败';
+  }
+};
+
+// 处理文件选择
+const handleFileSelect = (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  if (target.files && target.files.length > 0) {
+    selectedFile.value = target.files[0];
+  }
+};
+
+// 上传文献文件
+const uploadLiteratureFile = async () => {
+  if (!selectedFile.value || !selectedCitation.value) return;
+  
+  uploading.value = true;
+  const formData = new FormData();
+  formData.append('file', selectedFile.value);
+  formData.append('citationId', selectedCitation.value.id);
+  formData.append('bookId', String(props.bookId || 1));
+  
+  try {
+    // 调用后端API上传文件
+    const response = await axios.post(
+      'http://localhost:8080/api/literature/upload',
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      }
+    );
+    
+    console.log('文献上传成功:', response.data);
+    
+    // 更新引文的文件信息
+    if (selectedCitation.value) {
+      const fileUrl = response.data.fileUrl;
+      const fileType = getFileType(selectedFile.value.name);
+      
+      selectedCitation.value.fileUrl = fileUrl;
+      selectedCitation.value.fileType = fileType;
+      selectedCitation.value.fileName = selectedFile.value.name;
+      
+      // 如果是文本文件，立即加载内容
+      if (fileType === 'text') {
+        await loadLiteratureText(fileUrl);
+      }
+    }
+    
+    // 关闭对话框
+    showUploadDialog.value = false;
+    selectedFile.value = null;
+    
+    alert('文献上传成功！');
+  } catch (err) {
+    console.error('文献上传失败:', err);
+    alert('文献上传失败，请重试');
+  } finally {
+    uploading.value = false;
+  }
+};
+
+// 获取文件类型
+const getFileType = (fileName: string): 'pdf' | 'text' | 'other' => {
+  const ext = fileName.split('.').pop()?.toLowerCase();
+  if (ext === 'pdf') return 'pdf';
+  if (ext === 'txt') return 'text';
+  return 'other';
+};
+
+// 格式化文件大小
+const formatFileSize = (bytes: number): string => {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
+  return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+};
+
+// 设置引用类型分析
+const setAnalysisType = (index: number, type: 'exact' | 'paraphrase' | 'irrelevant') => {
+  if (citationReferences.value[index]) {
+    citationReferences.value[index].analysisType = type;
+    console.log(`设置引用类型 [${index}]: ${type}`);
+    
+    // TODO: 调用后端API保存分析结果
+    // await axios.post('/api/citation/analysis', {
+    //   citationId: selectedCitation.value?.id,
+    //   referenceIndex: index,
+    //   analysisType: type
+    // });
+  }
+};
+
+// 处理引用点击
+const handleReferenceClick = (ref: CitationReference, index: number) => {
+  console.log('点击引用:', ref);
+  // 可以在这里添加额外的处理逻辑，比如在中栏文献中高亮对应内容
+};
+
 // 暴露方法供父组件调用
 defineExpose({
   loadCitations,
@@ -524,22 +810,66 @@ defineExpose({
 </script>
 
 <style scoped>
-.citation-viewer {
-  display: flex;
-  gap: 20px;
-  height: 100%;
-  min-height: 0;
-}
-
-/* 左侧目录区 */
-.citation-catalog {
-  flex: 0 0 45%;
+/* 外层包裹容器 */
+.citation-viewer-wrapper {
   display: flex;
   flex-direction: column;
-  background: #f9fafb;
-  border-radius: 8px;
+  height: 100%;
+  width: 100%;
   overflow: hidden;
+}
+
+/* 三栏布局容器 */
+.citation-viewer-three-column {
+  display: grid;
+  grid-template-columns: 320px 1.2fr 380px;
+  gap: 14px;
+  flex: 1;
   min-height: 0;
+  padding: 12px;
+  background: #f5f7fa;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-behavior: smooth;
+}
+
+/* 横向滚动条样式 - 类似竖向滚动条 */
+.citation-viewer-three-column::-webkit-scrollbar {
+  height: 10px;
+}
+
+.citation-viewer-three-column::-webkit-scrollbar-track {
+  background: #f0f0f0;
+  border-radius: 5px;
+  margin: 0 12px;
+}
+
+.citation-viewer-three-column::-webkit-scrollbar-thumb {
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  border-radius: 5px;
+  transition: background 0.3s;
+}
+
+.citation-viewer-three-column::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(90deg, #5568d3 0%, #6a4190 100%);
+}
+
+/* Firefox滚动条 */
+.citation-viewer-three-column {
+  scrollbar-width: thin;
+  scrollbar-color: #667eea #f0f0f0;
+}
+
+/* 左栏：引文目录 */
+.citation-catalog-panel {
+  display: flex;
+  flex-direction: column;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  min-width: 280px;
+  max-width: 400px;
 }
 
 .catalog-header {
@@ -549,69 +879,126 @@ defineExpose({
   padding: 12px 16px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
+  flex-shrink: 0;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .catalog-header h4 {
   margin: 0;
   font-size: 16px;
+  font-weight: 700;
 }
 
 .citation-count {
-  background: rgba(255, 255, 255, 0.2);
-  padding: 2px 8px;
+  background: rgba(255, 255, 255, 0.25);
+  padding: 3px 10px;
   border-radius: 12px;
   font-size: 12px;
+  font-weight: 600;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.clear-selection-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.clear-selection-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: rotate(90deg);
 }
 
 .citation-list {
   list-style: none;
-  padding: 8px;
+  padding: 12px;
   margin: 0;
   overflow-y: auto;
   flex: 1;
   min-height: 0;
+  background: #f9fafb;
 }
 
 .citation-list li {
   display: flex;
-  gap: 8px;
-  padding: 10px 12px;
-  margin-bottom: 6px;
+  flex-direction: column;
+  padding: 14px 16px;
+  margin-bottom: 10px;
   background: white;
-  border-radius: 6px;
-  border-left: 3px solid #e5e7eb;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  border-left: 4px solid #e5e7eb;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .citation-list li:hover {
   border-left-color: #667eea;
-  background: #f0f4ff;
-  transform: translateX(2px);
+  background: #fafbff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
 }
 
 .citation-list li.active {
   border-left-color: #667eea;
-  background: #e0e7ff;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+  border-color: #c7d2fe;
+  background: linear-gradient(135deg, #f0f4ff 0%, #e0e7ff 100%);
+  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.25);
+  transform: translateY(-2px);
+}
+
+.citation-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 8px;
 }
 
 .citation-number {
   flex-shrink: 0;
-  font-weight: 600;
+  font-weight: 700;
   color: #667eea;
-  font-size: 14px;
+  font-size: 16px;
+  min-width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+  border-radius: 6px;
 }
 
 .citation-text {
   flex: 1;
-  font-size: 13px;
-  line-height: 1.5;
-  color: #374151;
+  font-size: 14px;
+  line-height: 1.65;
+  color: #1f2937;
+  font-weight: 500;
   overflow: hidden;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
+}
+
+.citation-text strong {
+  color: #111827;
+  font-weight: 700;
 }
 
 /* 右侧详情区 */
@@ -702,47 +1089,6 @@ defineExpose({
   font-weight: 600;
 }
 
-.reference-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.reference-item {
-  padding: 12px;
-  background: #f9fafb;
-  border-radius: 6px;
-  border-left: 3px solid #10b981;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.reference-item:hover {
-  background: #ecfdf5;
-  border-left-color: #059669;
-  transform: translateX(2px);
-}
-
-.reference-section {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 6px;
-  font-size: 12px;
-  color: #10b981;
-  font-weight: 500;
-}
-
-.section-icon {
-  font-size: 14px;
-}
-
-.reference-context {
-  font-size: 13px;
-  line-height: 1.5;
-  color: #374151;
-}
-
 /* 占位符 */
 .citation-placeholder {
   flex: 1;
@@ -782,5 +1128,705 @@ defineExpose({
 
 .retry-btn:hover {
   background: #5568d3;
+}
+
+/* 文件指示器样式 */
+.citation-file-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #065f46;
+  border: 1px solid #6ee7b7;
+  align-self: flex-start;
+}
+
+.citation-file-indicator .file-icon {
+  font-size: 14px;
+}
+
+.citation-file-indicator .file-status {
+  letter-spacing: 0.3px;
+}
+
+.citation-file-indicator.no-file {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border-color: #fcd34d;
+  color: #92400e;
+}
+
+/* 加载和错误状态 */
+.loading-indicator,
+.error-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  color: #6b7280;
+}
+
+.loading-indicator p,
+.error-message p {
+  margin: 0 0 16px 0;
+  font-size: 14px;
+}
+
+.no-citations {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: #9ca3af;
+  font-size: 14px;
+  font-style: italic;
+}
+
+/* 右栏：引用分析面板 */
+.reference-analysis-panel {
+  display: flex;
+  flex-direction: column;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  min-width: 300px;
+}
+
+.reference-analysis-panel .panel-header {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  padding: 12px 16px;
+  flex-shrink: 0;
+}
+
+.reference-analysis-panel .panel-header h4 {
+  margin: 0;
+  font-size: 16px;
+  color: white;
+  font-weight: 700;
+}
+
+.reference-analysis-panel .placeholder {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  color: #9ca3af;
+  font-weight: 500;
+}
+
+.analysis-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.citation-full-info {
+  padding: 16px;
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+  border: 1px solid #fde68a;
+  margin: 12px;
+  border-radius: 8px;
+  border-left: 4px solid #f59e0b;
+  flex-shrink: 0;
+}
+
+.info-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #92400e;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.info-content {
+  font-size: 13px;
+  line-height: 1.7;
+  color: #451a03;
+  font-weight: 500;
+}
+
+/* 中栏面板优化 */
+.literature-viewer-panel {
+  min-width: 300px;
+  display: flex;
+  flex-direction: column;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+.literature-viewer-panel .panel-header {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  padding: 12px 16px;
+  flex-shrink: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: white;
+}
+
+.literature-viewer-panel .panel-header h4 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.upload-btn {
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 6px;
+  color: white;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: 600;
+}
+
+.upload-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* 中栏文献查看器样式 */
+.literature-viewer-panel .placeholder {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  color: #9ca3af;
+  font-weight: 500;
+}
+
+.no-literature {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.upload-prompt {
+  text-align: center;
+  padding: 40px;
+}
+
+.prompt-icon {
+  font-size: 72px;
+  margin-bottom: 20px;
+  opacity: 0.8;
+}
+
+.prompt-text {
+  font-size: 16px;
+  color: #4b5563;
+  margin-bottom: 24px;
+  font-weight: 500;
+}
+
+.upload-btn-large {
+  padding: 14px 28px;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.upload-btn-large:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
+}
+
+/* PDF和文本查看器 */
+.literature-content {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  background: #f9fafb;
+}
+
+.pdf-viewer {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+.text-viewer {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+  background: white;
+}
+
+.text-viewer pre {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  font-family: 'Monaco', 'Courier New', monospace;
+  font-size: 13px;
+  line-height: 1.8;
+  color: #374151;
+  margin: 0;
+}
+
+/* 引用分析按钮组优化 */
+.reference-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.reference-item {
+  padding: 14px;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.reference-item:hover {
+  border-color: #60a5fa;
+  box-shadow: 0 4px 12px rgba(96, 165, 250, 0.15);
+  transform: translateY(-2px);
+}
+
+.ref-section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px dashed #d1d5db;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.ref-context {
+  margin-bottom: 12px;
+  padding: 12px;
+  background: #f0f9ff;
+  border-radius: 6px;
+  border-left: 3px solid #3b82f6;
+}
+
+.context-text {
+  font-size: 13px;
+  line-height: 1.7;
+  color: #1e40af;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.citation-mark {
+  display: inline-block;
+  padding: 3px 8px;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 1px solid #fcd34d;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #92400e;
+  font-weight: 700;
+}
+
+.analysis-btn {
+  flex: 1;
+  padding: 8px 12px;
+  border: 2px solid #d1d5db;
+  background: white;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #6b7280;
+}
+
+.analysis-btn:hover {
+  border-color: #60a5fa;
+  background: #eff6ff;
+  color: #1e40af;
+  transform: translateY(-1px);
+}
+
+.analysis-btn.active {
+  border-color: #10b981;
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  color: #065f46;
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.2);
+}
+
+.analysis-btn.active:nth-child(2) {
+  border-color: #f59e0b;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  color: #92400e;
+  box-shadow: 0 2px 6px rgba(245, 158, 11, 0.2);
+}
+
+.analysis-btn.active:nth-child(3) {
+  border-color: #ef4444;
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  color: #991b1b;
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.2);
+}
+
+.jump-btn {
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  border: none;
+  border-radius: 6px;
+  color: white;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.3);
+}
+
+.jump-btn:hover {
+  transform: translateX(3px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+/* 上传对话框样式 */
+.upload-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  backdrop-filter: blur(4px);
+}
+
+.upload-dialog {
+  background: white;
+  border-radius: 16px;
+  width: 540px;
+  max-width: 90%;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.3);
+  animation: dialogSlideIn 0.3s ease;
+}
+
+@keyframes dialogSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e5e7eb;
+  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+  border-radius: 16px 16px 0 0;
+}
+
+.dialog-header h4 {
+  margin: 0;
+  font-size: 18px;
+  color: #111827;
+  font-weight: 700;
+}
+
+.dialog-header .close-btn {
+  background: none;
+  border: none;
+  font-size: 28px;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 0;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.dialog-header .close-btn:hover {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.dialog-body {
+  padding: 24px;
+}
+
+.upload-hint {
+  font-size: 14px;
+  color: #6b7280;
+  margin-bottom: 20px;
+  line-height: 1.6;
+}
+
+.upload-hint strong {
+  color: #111827;
+  font-weight: 700;
+}
+
+.upload-area {
+  position: relative;
+  margin-bottom: 16px;
+}
+
+.file-input {
+  display: none;
+}
+
+.upload-prompt-area {
+  border: 2px dashed #cbd5e1;
+  border-radius: 12px;
+  padding: 48px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: #f9fafb;
+}
+
+.upload-prompt-area:hover {
+  border-color: #3b82f6;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+}
+
+.upload-icon {
+  font-size: 56px;
+  margin-bottom: 16px;
+  display: block;
+}
+
+.upload-prompt-area p {
+  margin: 0;
+  font-size: 15px;
+  color: #374151;
+  font-weight: 500;
+}
+
+.file-types {
+  font-size: 13px;
+  color: #9ca3af;
+  margin-top: 10px;
+}
+
+.selected-file {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border-radius: 8px;
+  border: 1px solid #bfdbfe;
+  margin-top: 16px;
+}
+
+.file-name {
+  font-size: 14px;
+  color: #1e40af;
+  font-weight: 600;
+  max-width: 60%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-size {
+  font-size: 13px;
+  color: #60a5fa;
+  font-weight: 500;
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 24px;
+  border-top: 1px solid #e5e7eb;
+  background: #f9fafb;
+  border-radius: 0 0 16px 16px;
+}
+
+.cancel-btn {
+  padding: 10px 20px;
+  background: white;
+  border: 2px solid #d1d5db;
+  border-radius: 8px;
+  color: #6b7280;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cancel-btn:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.confirm-btn {
+  padding: 10px 24px;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+.confirm-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+}
+
+.confirm-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* 引用分析面板部分样式补充 */
+.references-section {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 16px;
+  min-height: 0;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #e5e7eb;
+  flex-shrink: 0;
+}
+
+.section-header h5 {
+  margin: 0;
+  font-size: 15px;
+  color: #111827;
+  font-weight: 700;
+}
+
+.ref-count {
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  color: #1e40af;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 700;
+  border: 1px solid #93c5fd;
+}
+
+.no-references {
+  text-align: center;
+  padding: 60px 20px;
+  color: #9ca3af;
+  font-size: 15px;
+  font-style: italic;
+}
+
+.ref-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+
+.analysis-label {
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 8px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.analysis-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+/* 响应式设计 */
+@media (max-width: 1400px) {
+  .citation-viewer-three-column {
+    grid-template-columns: 280px 1fr 340px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .citation-viewer-three-column {
+    grid-template-columns: 260px 1fr 300px;
+    gap: 10px;
+  }
+  
+  .citation-catalog-panel {
+    min-width: 240px;
+  }
+}
+
+/* 滚动条美化 */
+.citation-list::-webkit-scrollbar,
+.references-section::-webkit-scrollbar,
+.text-viewer::-webkit-scrollbar {
+  width: 8px;
+}
+
+.citation-list::-webkit-scrollbar-track,
+.references-section::-webkit-scrollbar-track,
+.text-viewer::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.citation-list::-webkit-scrollbar-thumb,
+.references-section::-webkit-scrollbar-thumb,
+.text-viewer::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.citation-list::-webkit-scrollbar-thumb:hover,
+.references-section::-webkit-scrollbar-thumb:hover,
+.text-viewer::-webkit-scrollbar-thumb:hover {
+  background: #a1a1a1;
+}
+
+/* 确保目录面板内容不会溢出 */
+.citation-catalog-panel {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 </style>
