@@ -176,8 +176,10 @@
     const defaultCovers: Record<number, string> = {
       1: '/images/板块构造与地貌形迹.jpg',
       2: '/images/板块构造与地貌形迹下.jpg',
-      3: '/images/亚洲地貌圈及其板块造貌构造纲要.jpg',
+      3: '/images/宁镇山脉地质志.png',
       4: '/images/地学新两论 上篇 板块造貌构造学-兼论板块学说新发展.jpg',
+      6:'/images/板块构造学现代发现—板块造貌构造学新论（上篇）.jpg',
+      7:'/images/全球构造与脉动演化—地星旋转动力学概论（下篇）.png',
     };
     
     return defaultCovers[bookId] || '/images/default-book-cover.jpg';

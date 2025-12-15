@@ -789,17 +789,10 @@
               sections: files.map(file => {
                 // 从文件名中提取标题
                 const fileName = file.fileName || '';
-                // 移除文件扩展名
-                const titleWithoutExt = fileName.replace(/\.(md|markdown)$/i, '');
-                
-                // 检查文件名是否已经包含 property
-                const property = file.property || '';
-                let title = titleWithoutExt;
-                
-                // 如果文件名不是以 property 开头，则添加 property 前缀
-                if (property && !titleWithoutExt.startsWith(property)) {
-                  title = `${property} ${titleWithoutExt}`;
-                }
+                // 移除可能的 bookId_ 前缀（如 "6_1.1.md" -> "1.1.md"）
+                const cleanedName = fileName.replace(/^\d+_/, '');
+                // 移除文件扩展名作为标题
+                const title = cleanedName.replace(/\.(md|markdown)$/i, '');
                 
                 // 调试：确认 fileId 设置正确
                 const fileId = file.id;
@@ -3748,132 +3741,6 @@
   .section-content pre code {
     background: none;
     padding: 0;
-    border: none;
-    color: #333;
-    font-size: 15px;
-    line-height: 1.8;
-  }
-  .section-content blockquote {
-    margin: 24px 0;
-    padding: 16px 24px;
-    background: #f0f9ff;
-    border-left: 4px solid #1890ff;
-    border-radius: 4px;
-    color: #555;
-    font-style: italic;
-  }
-  .section-content img {
-    max-width: 100%;
-    height: auto;
-    border-radius: 8px;
-    margin: 24px 0;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  }
-  .section-content table {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 24px 0;
-    font-size: 16px;
-  }
-  .section-content table th {
-    background: #f0f9ff;
-    color: #0277bd;
-    font-weight: 600;
-    padding: 14px;
-    text-align: left;
-    border: 1px solid #e0f7fa;
-  }
-  .section-content table td {
-    padding: 12px 14px;
-    border: 1px solid #e8e8e8;
-    color: #333;
-  }
-  .section-content table tr:nth-child(even) {
-    background: #fafafa;
-  }
-  .section-content table tr:hover {
-    background: #f0f9ff;
-  }
-  .section-content a {
-    color: #1890ff;
-    text-decoration: none;
-    border-bottom: 1px solid transparent;
-    transition: all 0.3s ease;
-  }
-  .section-content a:hover {
-    color: #40a9ff;
-    border-bottom-color: #40a9ff;
-  }
-  .section-navigation {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 30px;
-    padding-top: 20px;
-    border-top: 1px solid #eee;
-  }
-  .nav-btn {
-    padding: 8px 16px;
-    background-color: #f5f5f5;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    font-size: 14px;
-    color: #555;
-  }
-  .nav-btn:hover:not(:disabled) {
-    background-color: #e0f7fa;
-    color: #0277bd;
-    border-color: #b2ebf2;
-  }
-  .nav-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-  .page-info {
-    font-size: 14px;
-    color: #777;
-  }
-  .no-section-selected {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 300px;
-    color: #999;
-    font-style: italic;
-    background-color: #f9f9f9;
-    border-radius: 8px;
-  }
-  @media (max-width: 1200px) {
-    .toc-container {
-      flex-direction: column;
-    }
-    .book-toc-section, .book-detail-section {
-      flex: 0 0 auto;
-      width: 100%;
-      max-height: none;
-    }
-    .catalog-area { min-width: 160px; }
-    .center-area { min-width: 220px; }
-    .right-area { min-width: 220px; }
-  }
-  @media (max-width: 992px) {
-    .book-info-section {
-      flex-direction: column;
-    }
-    .book-cover-wrapper {
-      flex: 0 0 auto;
-      width: 100%;
-      max-height: 350px;
-    }
-    .book-viewer-bottom { flex-direction: column; height: auto; }
-    .catalog-area, .center-area, .right-area {
-      min-width: 0;
-      max-width: 100vw;
-      border-radius: 0;
-      box-shadow: none;
-    }
     .catalog-area, .center-area, .right-area { height: auto; }
     .center-area, .right-area { padding: 16px 6px; }
   }
