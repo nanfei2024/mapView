@@ -1689,7 +1689,15 @@ const showPlateManager = computed(() => props.showPlateManager ?? false);
 #map {
   width: 100%;
   height: 100%;
-  position: relative;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background-color: #f0f0f0;
 }
 
 /* 分屏布局样式调整 */

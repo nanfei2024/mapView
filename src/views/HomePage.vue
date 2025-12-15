@@ -10,7 +10,6 @@
             <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
-          <span class="logo-text" v-if="!sidebarCollapsed">地质信息系统</span>
         </div>
         <button class="collapse-btn" @click="toggleSidebar">
           <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -134,7 +133,7 @@
 
       <!-- 侧边栏底部 -->
       <div class="sidebar-footer" v-if="!sidebarCollapsed">
-        <div class="user-info">
+        <div class="user-info" @click="handleLogout" title="点击退出登录">
           <div class="user-avatar">
             <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -143,7 +142,7 @@
           </div>
           <div class="user-details">
             <div class="user-name">地质研究员</div>
-            <div class="user-status">在线</div>
+            <div class="user-status">在线 (点击退出)</div>
           </div>
         </div>
       </div>
@@ -219,6 +218,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { ElMessage } from 'element-plus';
 import MapVisualization from '../components/MapVisualization.vue';
 import AIChatBox from '../components/AIChatBox.vue';
 
@@ -549,6 +549,13 @@ const toggleAIChat = () => {
   showAIChat.value = !showAIChat.value;
 };
 
+// 退出登录
+const handleLogout = () => {
+  localStorage.removeItem('isAuthenticated');
+  router.push('/login');
+  ElMessage.success('已退出登录');
+};
+
 onMounted(() => {
   document.addEventListener('click', handleClickOutside);
 });
@@ -562,7 +569,7 @@ onUnmounted(() => {
 /* 全局布局 */
 .app-layout {
   display: flex;
-  height: 100vh;
+  height: 100%;
   width: 100%;
   overflow: hidden;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
