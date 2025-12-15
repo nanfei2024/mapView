@@ -363,8 +363,14 @@ const layerGroups = ref<LayerGroup[]>([
       },
       {
         name: "全球地质区域及其类型和最后一次造山事件数据集(2022年)",
-        url: "http://172.21.252.158:8181/geoserver/geoData/wms?service=WMS&version=1.1.0&request=GetMap&layers=geoData%3Aglobal_gprv&bbox=-181.8000030517578%2C-90.89899444580078%2C181.8000030517578%2C90.89999389648438&width=768&height=383&srs=EPSG%3A4326&styles=&format=image%2Fpng",
+        url: "http://172.21.252.158:8088/geoserver/geoData/wms?service=WMS&version=1.1.0&request=GetMap&layers=geoData%3Aglobal_gprv&bbox=-181.8000030517578%2C-90.89899444580078%2C181.8000030517578%2C90.89999389648438&width=768&height=383&srs=EPSG%3A4326&styles=&format=image%2Fpng",
         type: "WMS",
+      },
+      {
+        name: "亚洲板块数据 (bankuai)",
+        url: "http://localhost:8081/geoserver/bankuai/wms?bbox={bbox-epsg-3857}&format=image/png&service=WMS&version=1.1.0&request=GetMap&srs=EPSG:3857&transparent=true&width=256&height=256&layers=bankuai:thirdplates0409-asian",
+        type: "WMS",
+        layerName: "bankuai:thirdplates0409-asian",
       },
     ],
   },

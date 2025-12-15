@@ -137,12 +137,12 @@ const generateMetadata = () => {
   setTimeout(() => {
     analyzing.value = false;
     metadata.value = {
-      title: '构造地质学',
-      author: 'Haakon Fossen',
-      publisher: '地质出版社',
-      publishDate: '2020-05-01',
-      isbn: '978-7-116-12345-6',
-      summary: '本书系统阐述了各类地质构造的几何形态、运动学特征和动力学机制。全书共分15章，内容涵盖了应力与应变分析、流变学基础、脆性变形与断裂构造、韧性变形与褶皱构造、叶理与线理等核心主题。书中配有大量精美的野外照片和地质图件，不仅介绍了经典构造地质学理论，还融入了板块构造、构造物理模拟等现代地质学前沿成果，是地质学及相关专业的重要教材。'
+      title: '示例书籍名称',
+      author: '张三',
+      publisher: '示例出版社',
+      publishDate: '2023-10-01',
+      isbn: '978-7-111-11111-1',
+      summary: '这是一本关于示例内容的精彩书籍，内容涵盖了...'
     };
     ElMessage.success('元数据识别成功');
   }, 2000);
