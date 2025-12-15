@@ -30,6 +30,14 @@
             <span class="nav-text" v-if="!sidebarCollapsed">文档数字化</span>
         </div>
 
+          <div class="nav-item" @click="navigateToMetadataGenerator" title="元数据生成">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2"/>
+              <path d="M12 8V16M8 12H16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <span class="nav-text" v-if="!sidebarCollapsed">元数据生成</span>
+          </div>
+
           <div class="nav-item" @click="navigateToFileList" title="文件管理">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M3 7C3 5.89543 3.89543 5 5 5H9L11 7H19C20.1046 7 21 7.89543 21 9V17C21 18.1046 20.1046 19 19 19H5C3.89543 19 3 18.1046 3 17V7Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -382,6 +390,11 @@ const router = useRouter();
 // 导航到文档数字化页面
 const navigateToDocumentDigitalization = () => {
   router.push('/document-digitalization');
+};
+
+// 导航到元数据生成页面
+const navigateToMetadataGenerator = () => {
+  router.push('/metadata-generator');
 };
 
 // 导航到文件列表页面（包含文件、图库、表库三个标签）

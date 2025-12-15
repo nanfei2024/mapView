@@ -25,6 +25,7 @@
             <button @click="resetGraph">🔄 重置</button>
             <button @click="expandAll">📖 展开</button>
             <button @click="collapseAll">📕 收起</button>
+            <button @click="generateData" class="generate-btn">✨ 数据生成</button>
           </div>
 
           <div class="section">

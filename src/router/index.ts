@@ -11,6 +11,7 @@ import HierarchicalGraphPage from '../views/HierarchicalGraphPage.vue';
 import LoginPage from '../views/LoginPage.vue';
 import MainLayout from '../views/MainLayout.vue';
 import ModulePlaceholder from '../views/ModulePlaceholder.vue';
+import MetadataGeneratorPage from '../views/MetadataGeneratorPage.vue';
 
 const routes = [
   {
@@ -77,6 +78,11 @@ const routes = [
     name: 'hierarchicalGraph',
     component: HierarchicalGraphPage,
   },
+  {
+    path: '/metadata-generator',
+    name: 'metadataGenerator',
+    component: MetadataGeneratorPage,
+  },
 ];
 
 const router = createRouter({
@@ -87,7 +93,7 @@ const router = createRouter({
 // 路由守卫：检查登录状态
 router.beforeEach((to, from, next) => {
   const isAuthenticated = localStorage.getItem('isAuthenticated');
-  
+
   if (to.name !== 'login' && !isAuthenticated) {
     next({ name: 'login' });
   } else {

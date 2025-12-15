@@ -178,7 +178,6 @@
               </ul>
             </template>
             <template v-else-if="catalogTab==='citation'">
-              <!-- 使用CitationViewer组件 -->
               <CitationViewer
                 v-if="hasSelectedSection && selectedBook"
                 :file-id="selectedBook.chapters[selectedChapter].sections[selectedSection].fileId"
@@ -3269,6 +3268,7 @@
     height: calc(100vh - 180px);
     background: #f3f6fa;
   }
+  
   .catalog-area {
     flex: 0 0 30%;
     min-width: 320px;

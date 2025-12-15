@@ -1,116 +1,138 @@
 <template>
-  <div class="login-container">
-    <!-- GIS 背景层 -->
-    <div class="gis-background">
-      <div class="grid-line horizontal"></div>
-      <div class="grid-line vertical"></div>
-      <canvas ref="globeCanvas" class="globe-canvas"></canvas>
-    </div>
+  <div class="split-layout">
+    <!-- Left Panel: Dark Brand/Vibe -->
+    <div class="left-panel">
+      <!-- Starry Background Canvas -->
+      <canvas ref="starCanvas" class="star-canvas"></canvas>
+      
+      <!-- Atmospheric Earth Glow (CSS) -->
+      <div class="earth-horizon"></div>
 
-    <!-- GIS 装饰 UI 层 (保持不变) -->
-    <div class="gis-overlay">
-      <div class="coordinate-box top-left">
-        <div class="label">CURRENT LOCATION</div>
-        <div class="value">LAT: {{ currentLat }}° N</div>
-        <div class="value">LON: {{ currentLon }}° E</div>
-        <div class="radar-scan"></div>
-      </div>
-
-      <div class="compass-box top-right">
-        <svg class="compass-icon" viewBox="0 0 100 100">
-          <circle cx="50" cy="50" r="45" stroke="rgba(16, 185, 129, 0.5)" stroke-width="2" fill="none"/>
-          <path d="M50 10 L60 50 L50 90 L40 50 Z" fill="rgba(16, 185, 129, 0.2)" stroke="#10b981" stroke-width="2"/>
-          <path d="M50 10 L60 50 L50 50 L50 10 Z" fill="#10b981"/>
-          <text x="50" y="8" text-anchor="middle" fill="#10b981" font-size="10">N</text>
-        </svg>
-      </div>
-
-      <div class="status-box bottom-left">
-        <div class="status-item">
-          <span class="indicator active"></span> SYSTEM ONLINE
-        </div>
-        <div class="status-item">
-          <span class="indicator active"></span> RADIATING CORE: ACTIVE
-        </div>
-      </div>
-
-      <div class="scale-box bottom-right">
-        <div class="scale-ruler">
-          <div class="segment"></div>
-          <div class="segment"></div>
-          <div class="segment"></div>
-          <div class="segment"></div>
-        </div>
-        <div class="scale-text">1 : 10,000</div>
-      </div>
-    </div>
-
-    <!-- 登录框 -->
-    <div class="login-content">
-      <div class="login-box">
-        <div class="box-corner corner-tl"></div>
-        <div class="box-corner corner-tr"></div>
-        <div class="box-corner corner-bl"></div>
-        <div class="box-corner corner-br"></div>
+      <div class="brand-content">
+        <h1 class="brand-title">地理多模态<br>智算系统</h1>
+        <p class="brand-subtitle">Spatial Intelligence Platform</p>
         
-        <div class="login-header">
-          <div class="logo-wrapper">
-            <svg class="map-logo" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M32 4L4 18L32 32L60 18L32 4Z" stroke="#10b981" stroke-width="2" fill="rgba(16, 185, 129, 0.1)"/>
-              <path d="M4 28L32 42L60 28" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M4 38L32 52L60 38" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
+        <div class="feature-list">
+          <div class="feature-item">
+            <span class="icon">✦</span>
+            <span>全方位地理数据融合</span>
           </div>
-          <h2 class="title-text">地理多模态智算系统</h2>
-          <p class="subtitle-text">SPATIAL INTELLIGENCE PLATFORM</p>
+          <div class="feature-item">
+            <span class="icon">✦</span>
+            <span>实时多维可视化分析</span>
+          </div>
+          <div class="feature-item">
+            <span class="icon">✦</span>
+            <span>智能决策支持引擎</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Panel: Login & Floating Nodes -->
+    <div class="right-panel">
+      <div class="login-center-wrapper">
+        
+        <!-- Floating Nodes Orbit -->
+        <div class="orbit-container">
+          <!-- Connection Lines (Optional, SVG layer behind) -->
+          <svg class="orbit-connections" viewBox="0 0 1000 1000">
+            <circle cx="500" cy="500" r="380" class="orbit-path-ring" />
+          </svg>
+
+          <!-- Node 1: Map (Top) -->
+          <div class="orbit-node pos-1 blue">
+            <div class="node-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 13l5.447-2.724A1 1 0 0021 16.382V5.618a1 1 0 00-1.447-.894L15 7m0 13V7m0 0L9 7" /></svg>
+            </div>
+            <span class="node-label">地图</span>
+          </div>
+
+          <!-- Node 2: Text (Top Right) -->
+          <div class="orbit-node pos-2 purple">
+             <div class="node-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+             </div>
+            <span class="node-label">文本</span>
+          </div>
+
+          <!-- Node 3: Image (Bottom Right) -->
+          <div class="orbit-node pos-3 orange">
+             <div class="node-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+             </div>
+            <span class="node-label">图像</span>
+          </div>
+
+          <!-- Node 4: Audio (Bottom) -->
+          <div class="orbit-node pos-4 green">
+             <div class="node-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+             </div>
+            <span class="node-label">音频</span>
+          </div>
+
+          <!-- Node 5: Video (Bottom Left) -->
+          <div class="orbit-node pos-5 yellow">
+             <div class="node-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect><line x1="7" y1="2" x2="7" y2="22"></line><line x1="17" y1="2" x2="17" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line><line x1="2" y1="7" x2="7" y2="7"></line><line x1="2" y1="17" x2="7" y2="17"></line><line x1="17" y1="17" x2="22" y2="17"></line><line x1="17" y1="7" x2="22" y2="7"></line></svg>
+             </div>
+            <span class="node-label">视频</span>
+          </div>
+
+           <!-- Node 6: Chart (Top Left) -->
+          <div class="orbit-node pos-6 red">
+             <div class="node-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+             </div>
+            <span class="node-label">图表</span>
+          </div>
         </div>
 
-        <el-form
-          ref="loginFormRef"
-          :model="loginForm"
-          :rules="loginRules"
-          class="login-form"
-          @keyup.enter="handleLogin"
-        >
-          <el-form-item prop="username">
-            <el-input
-              v-model="loginForm.username"
-              placeholder="ACCESS ID"
-              :prefix-icon="User"
-              size="large"
-              class="custom-input"
-            />
-          </el-form-item>
+        <div class="login-form-container">
+          <h2 class="form-title">Log in to your account</h2>
           
-          <el-form-item prop="password">
-            <el-input
-              v-model="loginForm.password"
-              type="password"
-              placeholder="SECURE KEY"
-              :prefix-icon="Lock"
-              show-password
-              size="large"
-              class="custom-input"
-            />
-          </el-form-item>
+          <el-form
+            ref="loginFormRef"
+            :model="loginForm"
+            :rules="loginRules"
+            class="clean-form"
+            @keyup.enter="handleLogin"
+          >
+            <el-form-item prop="username">
+              <div class="input-label">EMAIL OR USERNAME</div>
+              <el-input
+                v-model="loginForm.username"
+                placeholder="name@example.com"
+                class="minimal-input"
+              />
+            </el-form-item>
+            
+            <el-form-item prop="password">
+              <div class="input-label">PASSWORD</div>
+              <el-input
+                v-model="loginForm.password"
+                type="password"
+                placeholder="Password"
+                show-password
+                class="minimal-input"
+              />
+            </el-form-item>
 
-          <div class="form-options">
-            <el-checkbox v-model="rememberMe" class="custom-checkbox">记住凭证</el-checkbox>
-            <span class="forgot-pwd">重置密钥?</span>
-          </div>
-
-          <el-form-item>
             <el-button
               type="primary"
               :loading="loading"
-              class="login-button"
-              size="large"
+              class="minimal-button"
               @click="handleLogin"
             >
-              <span class="btn-text">INITIALIZE SESSION</span>
+              Log In
             </el-button>
-          </el-form-item>
-        </el-form>
+            
+            <div class="extra-actions">
+              <span class="forgot-pwd">Forgot password?</span>
+            </div>
+          </el-form>
+        </div>
       </div>
     </div>
   </div>
@@ -119,235 +141,154 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { User, Lock } from '@element-plus/icons-vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage } from 'element-plus'
 
 const router = useRouter()
 const loginFormRef = ref<FormInstance>()
 const loading = ref(false)
-const rememberMe = ref(false)
+const starCanvas = ref<HTMLCanvasElement | null>(null)
 const globeCanvas = ref<HTMLCanvasElement | null>(null)
 
-const currentLat = ref('39.9042')
-const currentLon = ref('116.4074')
-let coordInterval: any
-
-const loginForm = reactive({
-  username: '',
-  password: ''
-})
-
-const loginRules = reactive<FormRules>({
-  username: [
-    { required: true, message: '请输入账户ID', trigger: 'blur' },
-    { min: 3, max: 20, message: '长度异常', trigger: 'blur' }
-  ],
-  password: [
-    { required: true, message: '请输入安全密钥', trigger: 'blur' },
-    { min: 6, message: '密钥长度不足', trigger: 'blur' }
-  ]
-})
-
-// --- Enhanced Globe Animation Logic ---
+// --- Starry Sky Animation ---
 let ctx: CanvasRenderingContext2D | null = null
 let animationFrameId: number
-const dots: Dot[] = []
-const rays: Ray[] = []
-const GLOBE_RADIUS = 350 // 大幅增加半径
-const DOT_COUNT = 1200
-const RAY_COUNT = 100 // 放射线数量
-let rotation = 0
+const stars: Star[] = []
+const STAR_COUNT = 200
 
-class Dot {
+class Star {
+  x: number
+  y: number
+  size: number
+  opacity: number
+  speed: number
+  
+  constructor(width: number, height: number) {
+    this.x = Math.random() * width
+    this.y = Math.random() * height
+    this.size = Math.random() * 2
+    this.opacity = Math.random()
+    this.speed = Math.random() * 0.05 + 0.01
+  }
+  
+  update() {
+    this.opacity += this.speed
+    if (this.opacity > 1 || this.opacity < 0) this.speed = -this.speed
+  }
+  
+  draw(ctx: CanvasRenderingContext2D) {
+    ctx.fillStyle = `rgba(255, 255, 255, ${Math.abs(this.opacity)})`
+    ctx.beginPath()
+    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2)
+    ctx.fill()
+  }
+}
+
+const initStars = () => {
+  if (!starCanvas.value) return
+  const width = starCanvas.value.width
+  const height = starCanvas.value.height
+  stars.length = 0
+  for (let i = 0; i < STAR_COUNT; i++) {
+    stars.push(new Star(width, height))
+  }
+}
+
+const animateStars = () => {
+  if (!starCanvas.value || !ctx) return
+  ctx.clearRect(0, 0, starCanvas.value.width, starCanvas.value.height)
+  stars.forEach(star => {
+    star.update()
+    star.draw(ctx!)
+  })
+  animationFrameId = requestAnimationFrame(animateStars)
+}
+
+const handleResize = () => {
+  if (!starCanvas.value) return
+  const parent = starCanvas.value.parentElement
+  if (parent) {
+    starCanvas.value.width = parent.clientWidth
+    starCanvas.value.height = parent.clientHeight
+    initStars()
+  }
+}
+
+// --- Globe Animation (Left Panel) ---
+// Simplified dot globe for left panel
+let globeCtx: CanvasRenderingContext2D | null = null
+const globeDots: GlobeDot[] = []
+const GLOBE_RADIUS = 300
+let globeRotation = 0
+
+class GlobeDot {
   theta: number
   phi: number
   x: number = 0
   y: number = 0
   z: number = 0
-  
   constructor() {
     this.theta = Math.random() * 2 * Math.PI
     this.phi = Math.acos((Math.random() * 2) - 1)
   }
-
-  update(r: number) {
-    this.x = r * Math.sin(this.phi) * Math.cos(this.theta)
-    this.y = r * Math.sin(this.phi) * Math.sin(this.theta)
-    this.z = r * Math.cos(this.phi)
-  }
-
-  project(width: number, height: number, rotationY: number, perspectiveBase: number) {
-    const cosRy = Math.cos(rotationY)
-    const sinRy = Math.sin(rotationY)
-    
-    const rx = this.x * cosRy + this.z * sinRy
-    const ry = this.y
-    const rz = -this.x * sinRy + this.z * cosRy
-
-    const perspective = perspectiveBase / (perspectiveBase + rz)
-    
-    return {
-      x: width / 2 + rx * perspective,
-      y: height / 2 + ry * perspective,
-      scale: perspective,
-      visible: rz < 0,
-      alpha: (rz + GLOBE_RADIUS) / (2 * GLOBE_RADIUS) // Depth based alpha
-    }
-  }
-}
-
-class Ray {
-  theta: number
-  phi: number
-  radius: number
-  speed: number
-  length: number
-  
-  constructor() {
-    this.theta = Math.random() * 2 * Math.PI
-    this.phi = Math.acos((Math.random() * 2) - 1)
-    this.radius = GLOBE_RADIUS
-    this.speed = 0.5 + Math.random() * 1.5
-    this.length = 10 + Math.random() * 40
-  }
-
   update() {
-    this.radius += this.speed
-    if (this.radius > GLOBE_RADIUS * 1.8) {
-      this.radius = GLOBE_RADIUS
-      this.theta = Math.random() * 2 * Math.PI
-      this.phi = Math.acos((Math.random() * 2) - 1)
-    }
+     this.x = GLOBE_RADIUS * Math.sin(this.phi) * Math.cos(this.theta)
+     this.y = GLOBE_RADIUS * Math.sin(this.phi) * Math.sin(this.theta)
+     this.z = GLOBE_RADIUS * Math.cos(this.phi)
   }
-
-  project(width: number, height: number, rotationY: number, perspectiveBase: number) {
-    const cosRy = Math.cos(rotationY)
-    const sinRy = Math.sin(rotationY)
-
-    // Head of the ray
-    const hx = this.radius * Math.sin(this.phi) * Math.cos(this.theta)
-    const hy = this.radius * Math.sin(this.phi) * Math.sin(this.theta)
-    const hz = this.radius * Math.cos(this.phi)
-    
-    const rx = hx * cosRy + hz * sinRy
-    const ry = hy
-    const rz = -hx * sinRy + hz * cosRy
-    
-    const p1 = perspectiveBase / (perspectiveBase + rz)
-    
-    const x1 = width / 2 + rx * p1
-    const y1 = height / 2 + ry * p1
-    
-    return {
-      x: x1,
-      y: y1,
-      visible: rz < 0,
-      opacity: 1 - (this.radius - GLOBE_RADIUS) / (GLOBE_RADIUS * 0.8)
-    }
+  draw(ctx: CanvasRenderingContext2D, width: number, height: number) {
+     const cosRy = Math.cos(globeRotation)
+     const sinRy = Math.sin(globeRotation)
+     const rx = this.x * cosRy + this.z * sinRy
+     const ry = this.y
+     const rz = -this.x * sinRy + this.z * cosRy
+     const per = 400 / (400 + rz + GLOBE_RADIUS * 1.5)
+     const px = width/2 + rx * per
+     const py = height + ry * per - 100 // Shift down
+     if (rz < 0) {
+        ctx.beginPath()
+        ctx.arc(px, py, 1.5 * per, 0, Math.PI * 2)
+        ctx.fillStyle = `rgba(100, 150, 255, ${0.5 + per * 0.5})`
+        ctx.fill()
+     }
   }
 }
 
 const initGlobe = () => {
-  dots.length = 0
-  rays.length = 0
-  for (let i = 0; i < DOT_COUNT; i++) dots.push(new Dot())
-  for (let i = 0; i < RAY_COUNT; i++) rays.push(new Ray())
+  globeDots.length = 0
+  for(let i=0; i<1000; i++) globeDots.push(new GlobeDot())
 }
 
 const animateGlobe = () => {
-  if (!globeCanvas.value || !ctx) return
-  const width = globeCanvas.value.width
-  const height = globeCanvas.value.height
-  const perspectiveBase = 500 // Increased perspective base for larger globe
-  
-  ctx.clearRect(0, 0, width, height)
-  
-  // Create a radial gradient for the "Core" glow
-  const gradient = ctx.createRadialGradient(width/2, height/2, GLOBE_RADIUS * 0.2, width/2, height/2, GLOBE_RADIUS * 1.2)
-  gradient.addColorStop(0, 'rgba(16, 185, 129, 0.2)')
-  gradient.addColorStop(1, 'rgba(0, 0, 0, 0)')
-  ctx.fillStyle = gradient
-  ctx.fillRect(0, 0, width, height)
-  
-  rotation += 0.0015
-  
-  // Update Coordinates simulation
-  if (Math.random() > 0.8) {
-    currentLat.value = (39.9042 + Math.sin(rotation * 20)).toFixed(4)
-    currentLon.value = (116.4074 + Math.cos(rotation * 20)).toFixed(4)
-  }
-
-  // Draw Dots
-  dots.forEach(dot => {
-    dot.update(GLOBE_RADIUS)
-    const p = dot.project(width, height, rotation, perspectiveBase)
-    if (p.visible) {
-      ctx!.beginPath()
-      ctx!.arc(p.x, p.y, 1.5 * p.scale, 0, Math.PI * 2)
-      ctx!.fillStyle = `rgba(16, 185, 129, ${0.4 + p.scale * 0.6})`
-      ctx!.fill()
-    }
+  if(!globeCanvas.value) return
+  const ctx = globeCanvas.value.getContext('2d')
+  if(!ctx) return
+  ctx.clearRect(0,0,globeCanvas.value.width, globeCanvas.value.height)
+  globeRotation += 0.001
+  globeDots.forEach(d => {
+    d.update()
+    d.draw(ctx, globeCanvas.value!.width, globeCanvas.value!.height)
   })
-
-  // Draw Rays (Radiation Effect)
-  ctx.lineWidth = 1
-  rays.forEach(ray => {
-    ray.update()
-    const p = ray.project(width, height, rotation, perspectiveBase)
-    if (p.visible && p.opacity > 0) {
-      ctx!.beginPath()
-      ctx!.arc(p.x, p.y, 1, 0, Math.PI * 2)
-      ctx!.fillStyle = `rgba(59, 130, 246, ${p.opacity})` // Blueish rays for contrast
-      ctx!.fill()
-      
-      // Draw faint tail
-      // Simply drawing a dot for now as rays moving out looks like particles
-    }
-  })
-
-  // Connect close dots for "Network" feel (Limited to save performance on large dot count)
-  ctx.strokeStyle = 'rgba(16, 185, 129, 0.1)'
-  const projectedDots = dots
-    .map(d => d.project(width, height, rotation, perspectiveBase))
-    .filter(p => p.visible)
-  
-  // Optimization: Only connect a subset or use a spatial grid
-  // Simple optimization: check every Nth dot against others
-  for (let i = 0; i < projectedDots.length; i += 2) {
-      const p1 = projectedDots[i]
-      // Only connect to nearby dots in the list (pseudo-spatial)
-      // For visual effect without O(N^2)
-      for (let j = 1; j < 5; j++) {
-          if (i + j >= projectedDots.length) break
-          const p2 = projectedDots[i+j]
-          const dx = p1.x - p2.x
-          const dy = p1.y - p2.y
-          if (dx*dx + dy*dy < 2000) {
-              ctx.beginPath()
-              ctx.moveTo(p1.x, p1.y)
-              ctx.lineTo(p2.x, p2.y)
-              ctx.stroke()
-          }
-      }
-  }
-  
-  animationFrameId = requestAnimationFrame(animateGlobe)
+  requestAnimationFrame(animateGlobe)
 }
 
-const handleResize = () => {
-  if (!globeCanvas.value) return
-  globeCanvas.value.width = window.innerWidth
-  globeCanvas.value.height = window.innerHeight
-}
 
 onMounted(() => {
-  if (globeCanvas.value) {
-    ctx = globeCanvas.value.getContext('2d')
+  if (starCanvas.value) {
+    ctx = starCanvas.value.getContext('2d')
     handleResize()
+    animateStars()
+    window.addEventListener('resize', handleResize)
+  }
+  if (globeCanvas.value) {
+    // Set size
+    const parent = globeCanvas.value.parentElement
+    if(parent) {
+      globeCanvas.value.width = parent.clientWidth
+      globeCanvas.value.height = parent.clientHeight
+    }
     initGlobe()
     animateGlobe()
-    window.addEventListener('resize', handleResize)
   }
 })
 
@@ -356,183 +297,291 @@ onUnmounted(() => {
   window.removeEventListener('resize', handleResize)
 })
 
+const loginForm = reactive({
+  username: '',
+  password: ''
+})
+
+const loginRules = reactive<FormRules>({
+  username: [
+    { required: true, message: 'Please enter username', trigger: 'blur' }
+  ],
+  password: [
+    { required: true, message: 'Please enter password', trigger: 'blur' }
+  ]
+})
+
 const handleLogin = async () => {
   if (!loginFormRef.value) return
   
-  await loginFormRef.value.validate((valid, fields) => {
+  await loginFormRef.value.validate((valid) => {
     if (valid) {
       loading.value = true
       setTimeout(() => {
         loading.value = false
         localStorage.setItem('isAuthenticated', 'true')
-        ElMessage.success({
-          message: 'ACCESS GRANTED: WELCOME BACK.',
-          type: 'success',
-          duration: 2000
-        })
+        ElMessage.success('Login Successful')
         router.push('/')
-      }, 1500)
-    } else {
-      console.log('error submit!', fields)
+      }, 1000)
     }
   })
 }
 </script>
 
 <style scoped>
-.login-container {
+.split-layout {
   display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  background-color: #05080f;
-  position: relative;
+  width: 100vw;
+  height: 100vh;
   overflow: hidden;
-  font-family: 'JetBrains Mono', 'Segoe UI', monospace;
 }
 
-/* --- GIS Background --- */
-.gis-background {
+/* --- Left Panel --- */
+.left-panel {
+  width: 50%;
+  background-color: #020617; /* Deep Space Black */
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 60px;
+  position: relative;
+  overflow: hidden;
+}
+
+.star-canvas {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: radial-gradient(circle at center, #0f172a 0%, #000000 100%);
   z-index: 1;
 }
 
-.globe-canvas {
+/* Globe Container */
+.globe-container {
   position: absolute;
-  top: 0;
+  bottom: 0;
   left: 0;
   width: 100%;
-  height: 100%;
-}
-
-/* --- GIS UI Overlay (HUD) --- */
-.gis-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 5;
+  height: 50%;
+  z-index: 2;
   pointer-events: none;
-  padding: 40px;
-  box-sizing: border-box;
 }
+.globe-container canvas { width: 100%; height: 100%; }
 
-.coordinate-box, .compass-box, .status-box, .scale-box {
+/* Atmospheric Earth Horizon */
+.earth-horizon {
   position: absolute;
-  color: #10b981;
-  text-shadow: 0 0 5px rgba(16, 185, 129, 0.5);
+  bottom: -40%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 150%;
+  height: 80%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 100%, #1e40af 0%, #172554 40%, #020617 80%);
+  z-index: 2;
+  box-shadow: 0 -20px 100px rgba(59, 130, 246, 0.3), inset 0 20px 60px rgba(56, 189, 248, 0.4); 
 }
 
-.top-left { top: 40px; left: 40px; }
-.top-right { top: 40px; right: 40px; }
-.bottom-left { bottom: 40px; left: 40px; }
-.bottom-right { bottom: 40px; right: 40px; }
-
-/* Coordinates */
-.coordinate-box .label { font-size: 10px; opacity: 0.7; letter-spacing: 2px; margin-bottom: 5px; }
-.coordinate-box .value { font-size: 14px; font-weight: bold; font-family: 'Courier New', monospace; }
-.radar-scan {
-  width: 100px; height: 2px;
-  background: linear-gradient(90deg, transparent, #10b981, transparent);
-  margin-top: 10px;
-  animation: scan 2s linear infinite;
+.brand-content { position: relative; z-index: 5; }
+.brand-title {
+  font-size: 48px;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 20px;
+  background: linear-gradient(90deg, #fff, #94a3b8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
-@keyframes scan { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+.brand-subtitle { font-size: 18px; color: #94a3b8; margin-bottom: 60px; letter-spacing: 1px; }
 
-/* Compass */
-.compass-icon { width: 80px; height: 80px; animation: pulseCompass 4s ease-in-out infinite; }
-@keyframes pulseCompass { 0%, 100% { opacity: 0.8; transform: rotate(0deg); } 50% { opacity: 1; transform: rotate(5deg); } }
+.feature-list { display: flex; flex-direction: column; gap: 20px; }
+.feature-item { display: flex; align-items: center; gap: 15px; color: #e2e8f0; font-size: 14px; }
+.feature-item .icon { color: #f97316; }
 
-/* Status */
-.status-item { font-size: 12px; margin-bottom: 5px; display: flex; align-items: center; gap: 8px; }
-.indicator { width: 6px; height: 6px; background: #10b981; border-radius: 50%; display: inline-block; }
-.indicator.active { box-shadow: 0 0 8px #10b981; animation: blink 1s infinite; }
-@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
 
-/* Scale */
-.scale-ruler { display: flex; width: 150px; height: 10px; border: 1px solid #10b981; border-top: none; }
-.scale-ruler .segment { flex: 1; border-right: 1px solid #10b981; height: 5px; margin-top: 5px; }
-.scale-ruler .segment:last-child { border-right: none; }
-.scale-ruler .segment:nth-child(even) { background: rgba(16, 185, 129, 0.2); }
-.scale-text { font-size: 10px; text-align: center; margin-top: 5px; letter-spacing: 1px; }
-
-/* --- Login Box --- */
-.login-content {
+/* --- Right Panel --- */
+.right-panel {
+  width: 50%;
+  background-color: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   position: relative;
-  z-index: 10;
+  /* Subtle Background Pattern */
+  background-image: radial-gradient(#e2e8f0 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.login-center-wrapper {
+  position: relative;
   width: 100%;
-  max-width: 400px;
+  max-width: 1000px;
+  height: 1000px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-.login-box {
-  background: rgba(5, 8, 15, 0.75); /* 更透明，让背景球可见 */
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(16, 185, 129, 0.3);
-  padding: 40px;
-  position: relative;
-  box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
-}
-
-/* Tech Corners */
-.box-corner {
+/* --- Floating Orbit Nodes --- */
+.orbit-container {
   position: absolute;
-  width: 10px; height: 10px;
-  border: 2px solid #10b981;
-  transition: all 0.3s;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
 }
-.corner-tl { top: -1px; left: -1px; border-right: none; border-bottom: none; }
-.corner-tr { top: -1px; right: -1px; border-left: none; border-bottom: none; }
-.corner-bl { bottom: -1px; left: -1px; border-right: none; border-top: none; }
-.corner-br { bottom: -1px; right: -1px; border-left: none; border-top: none; }
 
-.login-box:hover .box-corner { width: 20px; height: 20px; box-shadow: 0 0 10px #10b981; }
-
-.login-header { text-align: center; margin-bottom: 30px; }
-.map-logo { width: 60px; height: 60px; margin-bottom: 15px; animation: floatLogo 3s ease-in-out infinite; }
-@keyframes floatLogo { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
-
-.title-text { color: #fff; font-size: 20px; letter-spacing: 2px; margin: 0 0 5px; font-weight: 700; }
-.subtitle-text { color: #10b981; font-size: 10px; letter-spacing: 3px; }
-
-/* Inputs */
-.custom-input :deep(.el-input__wrapper) {
-  background: rgba(16, 185, 129, 0.05);
-  border: 1px solid rgba(16, 185, 129, 0.2);
-  box-shadow: none !important;
-  border-radius: 0;
+.orbit-connections {
+  position: absolute;
+  width: 100%; height: 100%;
+  top: 0; left: 0;
+  z-index: 0;
 }
-.custom-input :deep(.el-input__wrapper:hover), .custom-input :deep(.el-input__wrapper.is-focus) {
-  border-color: #10b981;
-  background: rgba(16, 185, 129, 0.1);
+.orbit-path-ring {
+  fill: none;
+  stroke: #cbd5e1;
+  stroke-width: 1.5;
+  stroke-dasharray: 8 8;
+  opacity: 0.5;
 }
-.custom-input :deep(.el-input__inner) { color: #fff; font-family: 'Courier New', monospace; }
-.custom-input :deep(.el-input__icon) { color: #10b981; }
 
-.form-options { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; font-size: 12px; }
-.custom-checkbox { color: #6b7280; --el-checkbox-checked-text-color: #10b981; --el-checkbox-checked-bg-color: #10b981; --el-checkbox-checked-input-border-color: #10b981; }
-.forgot-pwd { color: #6b7280; cursor: pointer; }
-.forgot-pwd:hover { color: #10b981; }
+.orbit-node {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 110px; /* Increased size */
+  height: 110px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.08); /* Stronger shadow */
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  cursor: pointer;
+  pointer-events: auto;
+  z-index: 1;
+  border: 4px solid #fff; /* Border to pop from bg */
+}
 
-.login-button {
-  width: 100%; height: 45px;
-  background: rgba(16, 185, 129, 0.1);
-  border: 1px solid #10b981;
-  color: #10b981;
-  font-family: 'JetBrains Mono', monospace;
-  font-weight: bold;
-  letter-spacing: 1px;
-  transition: all 0.3s;
-  border-radius: 0;
+.orbit-node:hover {
+  transform: scale(1.15) translateY(-5px);
+  box-shadow: 0 15px 40px rgba(59, 130, 246, 0.2);
+  border-color: #f8fafc;
 }
-.login-button:hover {
-  background: #10b981;
-  color: #000;
-  box-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
+
+.node-icon {
+  width: 42px; /* Increased icon */
+  height: 42px;
+  color: #64748b;
+  margin-bottom: 6px;
+  transition: color 0.3s;
 }
+
+.node-label {
+  font-size: 14px; /* Larger Text */
+  font-weight: 700;
+  color: #475569;
+}
+
+/* Colors on hover or active */
+.orbit-node.blue:hover .node-icon { color: #3b82f6; }
+.orbit-node.purple:hover .node-icon { color: #a855f7; }
+.orbit-node.orange:hover .node-icon { color: #f97316; }
+.orbit-node.green:hover .node-icon { color: #22c55e; }
+.orbit-node.yellow:hover .node-icon { color: #eab308; }
+.orbit-node.red:hover .node-icon { color: #ef4444; }
+
+/* Positioning (Wider Radius ~380px) */
+/* Wrapper 1000x1000, Center 500,500 */
+/* 
+   Pos 1 (Top): 500, 120
+   Pos 2 (Top Right): 830, 310
+   Pos 3 (Bottom Right): 830, 690
+   Pos 4 (Bottom): 500, 880
+   Pos 5 (Bottom Left): 170, 690
+   Pos 6 (Top Left): 170, 310
+*/
+
+.pos-1 { top: 120px; left: 50%; margin-left: -55px; animation: float 6s ease-in-out infinite; } 
+.pos-2 { top: 310px; right: 170px; animation: float 6s ease-in-out infinite 1s; } 
+.pos-3 { bottom: 310px; right: 170px; animation: float 6s ease-in-out infinite 2s; } 
+.pos-4 { bottom: 120px; left: 50%; margin-left: -55px; animation: float 6s ease-in-out infinite 3s; }
+.pos-5 { bottom: 310px; left: 170px; animation: float 6s ease-in-out infinite 4s; }
+.pos-6 { top: 310px; left: 170px; animation: float 6s ease-in-out infinite 5s; }
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+
+
+/* --- Clean Form --- */
+.login-form-container {
+  width: 340px;
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 40px 30px;
+  border-radius: 16px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.08); /* Clean shadow */
+  backdrop-filter: blur(10px);
+}
+
+.form-title {
+  text-align: center;
+  color: #0f172a;
+  font-size: 22px;
+  margin-bottom: 30px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.input-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #94a3b8;
+  margin-bottom: 6px;
+  letter-spacing: 0.5px;
+}
+
+.minimal-input :deep(.el-input__wrapper) {
+  background: #f8fafc;
+  box-shadow: none;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px;
+  transition: all 0.2s;
+}
+.minimal-input :deep(.el-input__wrapper:focus-within) {
+  background: #fff;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.minimal-button {
+  width: 100%;
+  height: 50px;
+  background-color: #0f172a; /* Dark button like branding */
+  border: none;
+  font-weight: 600;
+  font-size: 16px;
+  margin-top: 20px;
+  border-radius: 8px;
+  color: #fff;
+}
+.minimal-button:hover {
+  background-color: #1e293b;
+}
+
+.extra-actions {
+  text-align: center;
+  margin-top: 20px;
+}
+.forgot-pwd {
+  font-size: 13px;
+  color: #64748b;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.forgot-pwd:hover { color: #3b82f6; }
 </style>
