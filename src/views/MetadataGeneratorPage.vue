@@ -63,7 +63,8 @@
           </template>
           
           <div v-if="metadata" class="metadata-form">
-            <el-form :model="metadata" label-width="100px" label-position="left">
+            <el-form :model="metadata" label-width="120px" label-position="left">
+              <el-divider content-position="left">基本信息</el-divider>
               <el-form-item label="书籍标题">
                 <el-input v-model="metadata.title" />
               </el-form-item>
@@ -84,8 +85,54 @@
                <el-form-item label="ISBN">
                 <el-input v-model="metadata.isbn" />
               </el-form-item>
+              <el-form-item label="定价">
+                <el-input v-model="metadata.price" />
+              </el-form-item>
                <el-form-item label="简介">
-                <el-input v-model="metadata.summary" type="textarea" :rows="4" />
+                <el-input v-model="metadata.summary" type="textarea" :rows="3" />
+              </el-form-item>
+
+              <el-divider content-position="left">出版详情</el-divider>
+              <el-form-item label="责任编辑">
+                <el-input v-model="metadata.editors" />
+              </el-form-item>
+              <el-form-item label="责任设计">
+                <el-input v-model="metadata.designer" />
+              </el-form-item>
+              <el-form-item label="社址邮编">
+                <el-input v-model="metadata.publisherAddress" />
+              </el-form-item>
+              <el-form-item label="联系电话">
+                <el-input v-model="metadata.phone" />
+              </el-form-item>
+              <el-form-item label="传真">
+                <el-input v-model="metadata.fax" />
+              </el-form-item>
+              <el-form-item label="网址">
+                <el-input v-model="metadata.website" />
+              </el-form-item>
+
+              <el-divider content-position="left">印刷信息</el-divider>
+              <el-form-item label="印刷厂">
+                <el-input v-model="metadata.printer" />
+              </el-form-item>
+              <el-form-item label="开本">
+                <el-input v-model="metadata.format" />
+              </el-form-item>
+              <el-form-item label="印张">
+                <el-input v-model="metadata.sheets" />
+              </el-form-item>
+              <el-form-item label="字数">
+                <el-input v-model="metadata.wordCount" />
+              </el-form-item>
+              <el-form-item label="版次">
+                <el-input v-model="metadata.edition" />
+              </el-form-item>
+              <el-form-item label="印次">
+                <el-input v-model="metadata.printing" />
+              </el-form-item>
+              <el-form-item label="审图号">
+                <el-input v-model="metadata.mapNumber" />
               </el-form-item>
             </el-form>
              <div class="result-actions">
@@ -137,12 +184,27 @@ const generateMetadata = () => {
   setTimeout(() => {
     analyzing.value = false;
     metadata.value = {
-      title: '示例书籍名称',
-      author: '张三',
-      publisher: '示例出版社',
-      publishDate: '2023-10-01',
-      isbn: '978-7-111-11111-1',
-      summary: '这是一本关于示例内容的精彩书籍，内容涵盖了...'
+      title: '板块构造学现代发展——板块造貌构造学新论（上篇）',
+      author: '陈志明',
+      publisher: '地质出版社',
+      publishDate: '2025-05-01',
+      isbn: '978-7-116-14390-6',
+      summary: '本书是"亚洲陆海地貌与板块盆构造两图"研制及其《板块构造与地貌形迹——亚欧与太平洋盆构造两图》延伸之"地学新两论"。本书系统阐述板块构造学的现代发展,详细介绍板块造貌构造学的新理论体系。中国国家版本馆CIP数据核字第202494RB36号。',
+      // 扩展出版信息
+      editors: '顾跃荷 肖坚华 郑长胜 孙敬中',
+      designer: '关风云',
+      publisherAddress: '北京市海淀区学院路31号，100083',
+      phone: '(010) 66554649 (邮购部)；(010) 66554576 (编辑室)',
+      website: 'https://www.gph.cingp.com',
+      fax: '(010) 66554686',
+      printer: '北京地大彩印有限公司',
+      format: '787mm×1092mm 1/8',
+      sheets: '37.5',
+      wordCount: '920千字',
+      edition: '2025年5月北京第1版',
+      printing: '2025年5月北京第1次印刷',
+      mapNumber: 'GS京(2024) 1910号',
+      price: '380.00元'
     };
     ElMessage.success('元数据识别成功');
   }, 2000);
@@ -324,13 +386,39 @@ const saveMetadata = () => {
 }
 
 .metadata-form {
+  flex: 1;
+  overflow-y: auto;
   padding: 20px 0;
 }
 
+.metadata-form::-webkit-scrollbar {
+  width: 6px;
+}
+
+.metadata-form::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.metadata-form::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.metadata-form::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
 .result-actions {
-  margin-top: 20px;
+  padding: 16px 0;
+  margin-top: 0;
   display: flex;
   justify-content: flex-end;
+  border-top: 1px solid #ebeef5;
+  background: white;
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
 }
 
 .empty-state {

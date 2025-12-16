@@ -87,11 +87,11 @@
             <span class="nav-text" v-if="!sidebarCollapsed">底图数据</span>
         </div>
 
-          <div class="nav-item" @click="navigateToBooks" title="书籍查看">
+          <div class="nav-item" @click="navigateToBooks" title="目录体系重构">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M12 6.5C10.5 4.5 8 3 5 3V19C8 19 10.5 20.5 12 22.5C13.5 20.5 16 19 19 19V3C16 3 13.5 4.5 12 6.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
-            <span class="nav-text" v-if="!sidebarCollapsed">书籍查看</span>
+            <span class="nav-text" v-if="!sidebarCollapsed">目录体系重构</span>
         </div>
 
           <div class="nav-item" @click="togglePlateManager" title="板块数据管理">

@@ -3,6 +3,18 @@
     <h4>板块与书籍联动</h4>
     <p class="description">查看每个板块对应的书籍章节，点击可跳转到相应章节</p>
     
+    <!-- 书籍选择标签页 -->
+    <div class="book-tabs">
+      <button 
+        v-for="book in books" 
+        :key="book.id"
+        :class="['book-tab', { active: selectedBookId === book.id }]"
+        @click="selectBook(book.id)"
+      >
+        {{ book.title }}
+      </button>
+    </div>
+    
     <!-- 加载按钮 -->
     <div class="load-section">
       <button @click="loadPlateBookLinks" :disabled="loading" class="load-btn">
@@ -158,6 +170,14 @@ interface PlateLink {
   plateCode: string;
   level: number;
   chapters: Chapter[];
+  bookId?: string; // 所属书籍ID
+}
+
+// 书籍数据结构
+interface Book {
+  id: string;
+  title: string;
+  apiBookId?: number; // 对应后端的bookId
 }
 
 // 定义emit事件
@@ -168,7 +188,7 @@ const emit = defineEmits<{
 const loading = ref(false);
 const statusMsg = ref('');
 const isError = ref(false);
-const plateLinks = ref<PlateLink[]>([]);
+const plateLinks = ref<PlateLink[]>([]); // 存储所有书籍的板块数据
 const expandedPlates = ref<Record<string, boolean>>({});
 const expandedGroups = ref({
   level2: true,
@@ -176,20 +196,35 @@ const expandedGroups = ref({
 });
 const jumpingChapter = ref<string | null>(null);
 
+// 书籍列表
+const books = ref<Book[]>([
+  { id: 'book1', title: '板块构造与地貌行迹', apiBookId: 1 },
+  { id: 'book2', title: '板块造貌构造学新论', apiBookId: 2 },
+  { id: 'book3', title: '地星旋转动力学概论', apiBookId: 3 }
+]);
+
+// 当前选中的书籍
+const selectedBookId = ref('book1');
+
 // Markdown查看器状态
 const showViewer = ref(false);
 const viewerLoading = ref(false);
 const markdownContent = ref('');
 const currentChapter = ref<Chapter & { plateName?: string } | null>(null);
 
-// 计算属性：二级板块
-const level2Plates = computed(() => {
-  return plateLinks.value.filter(plate => plate.level === 2);
+// 计算属性：当前选中书籍的板块
+const currentBookPlates = computed(() => {
+  return plateLinks.value.filter(plate => plate.bookId === selectedBookId.value);
 });
 
-// 计算属性：三级板块
+// 计算属性：二级板块（过滤当前书籍）
+const level2Plates = computed(() => {
+  return currentBookPlates.value.filter(plate => plate.level === 2);
+});
+
+// 计算属性：三级板块（过滤当前书籍）
 const level3Plates = computed(() => {
-  return plateLinks.value.filter(plate => plate.level === 3);
+  return currentBookPlates.value.filter(plate => plate.level === 3);
 });
 
 // 计算属性：渲染后的Markdown
@@ -206,6 +241,14 @@ function extractParentChapter(chapterTitle: string): string | null {
   return match ? match[1] : null;
 }
 
+// 选择书籍
+function selectBook(bookId: string) {
+  selectedBookId.value = bookId;
+  // 切换书籍时重置展开状态
+  expandedPlates.value = {};
+  expandedGroups.value = { level2: true, level3: false };
+}
+
 // 加载板块书籍关联数据
 async function loadPlateBookLinks() {
   loading.value = true;
@@ -215,282 +258,83 @@ async function loadPlateBookLinks() {
   try {
     console.log('开始加载板块关联数据...');
     
-    // 定义板块与章节的映射关系（前端配置）
+    // 定义板块与章节的映射关系（按书籍组织）
+    const plateDataByBook = {
+      // 第一本书：板块构造与地貌行迹 (保留现有数据)
+      book1: [
+        // 二级板块
+        { plateName: '澳洲', plateCode: 'AZ', level: 2, bookId: 'book1', chapters: [{ title: '2.3', path: '/books/book1/2.3.md' }] },
+        { plateName: '东南亚-班达海', plateCode: 'DNY_BDH', level: 2, bookId: 'book1', chapters: [{ title: '4.5', path: '/books/book1/4.5.md' }] },
+        { plateName: '两苏海', plateCode: 'LSH', level: 2, bookId: 'book1', chapters: [{ title: '4.7', path: '/books/book1/4.7.md' }] },
+        { plateName: '大印度', plateCode: 'DYD', level: 2, bookId: 'book1', chapters: [{ title: '2.2', path: '/books/book1/2.2.md' }] },
+        { plateName: '南海', plateCode: 'NH', level: 2, bookId: 'book1', chapters: [{ title: '4.6', path: '/books/book1/4.6.md' }] },
+        { plateName: '泛非洲', plateCode: 'FFZ', level: 2, bookId: 'book1', chapters: [{ title: '2.1', path: '/books/book1/2.1.md' }] },
+        { plateName: '菲律宾海', plateCode: 'FLBH', level: 2, bookId: 'book1', chapters: [] },
+        { plateName: '华南', plateCode: 'HN', level: 2, bookId: 'book1', chapters: [{ title: '4.4', path: '/books/book1/4.4.md' }] },
+        { plateName: '路间东特提斯', plateCode: 'LJDTTS', level: 2, bookId: 'book1', chapters: [{ title: '3.3', path: '/books/book1/3.3.md' }] },
+        { plateName: '华北', plateCode: 'HB', level: 2, bookId: 'book1', chapters: [{ title: '4.3', path: '/books/book1/4.3.md' }] },
+        { plateName: '东北亚', plateCode: 'DBY', level: 2, bookId: 'book1', chapters: [{ title: '4.2', path: '/books/book1/4.2.md' }] },
+        { plateName: '中亚', plateCode: 'ZY', level: 2, bookId: 'book1', chapters: [{ title: '1.5', path: '/books/book1/1.5.md' }] },
+        { plateName: '北亚', plateCode: 'BY', level: 2, bookId: 'book1', chapters: [{ title: '1.4', path: '/books/book1/1.4.md' }] },
+        { plateName: '北极区', plateCode: 'BJQ', level: 2, bookId: 'book1', chapters: [{ title: '4.1', path: '/books/book1/4.1.md' }] },
+        
+        // 三级板块
+        { plateName: '班达海', plateCode: 'BDH', level: 3, bookId: 'book1', chapters: [{ title: '4.5.2.4.D', path: '/books/book1/4.5.2.4.D.md', parentChapter: '4.5', subsection: '4.5.2.4.D' }] },
+        { plateName: '毕地延定', plateCode: 'BDYD', level: 3, bookId: 'book1', chapters: [{ title: '4.5.2.3.C', path: '/books/book1/4.5.2.3.C.md', parentChapter: '4.5', subsection: '4.5.2.3.C' }] },
+        { plateName: '孟加拉湾', plateCode: 'MJLW', level: 3, bookId: 'book1', chapters: [{ title: '2.2.5.2.B', path: '/books/book1/2.2.5.2.B.md', parentChapter: '2.2', subsection: '2.2.5.2.B' }] },
+        { plateName: '西面_宾达曼', plateCode: 'XM_BDM', level: 3, bookId: 'book1', chapters: [{ title: '4.5.2.1.A', path: '/books/book1/4.5.2.1.A.md', parentChapter: '4.5', subsection: '4.5.2.1.A' }] },
+        { plateName: '阿拉伯', plateCode: 'ALB', level: 3, bookId: 'book1', chapters: [{ title: '2.1.2.3.H', path: '/books/book1/2.1.2.3.H.md', parentChapter: '2.1', subsection: '2.1.2.3.H' }] },
+        { plateName: '印支半岛', plateCode: 'YZBD', level: 3, bookId: 'book1', chapters: [{ title: '4.5.2.2.B', path: '/books/book1/4.5.2.2.B.md', parentChapter: '4.5', subsection: '4.5.2.2.B' }] },
+        { plateName: '印度半岛', plateCode: 'YDBD', level: 3, bookId: 'book1', chapters: [{ title: '2.2.5.2.B', path: '/books/book1/2.2.5.2.B.md' }, { title: '2.2.5.1.A', path: '/books/book1/2.2.5.1.A.md' }] },
+        { plateName: '无德_喜马拉雅', plateCode: 'WD_XMLY', level: 3, bookId: 'book1', chapters: [{ title: '3.3.4.4.D', path: '/books/book1/3.3.4.4.D.md' }] },
+        { plateName: '青东南_朝鲜半岛', plateCode: 'QDN_CXBD', level: 3, bookId: 'book1', chapters: [{ title: '4.3.2.2.B', path: '/books/book1/4.3.2.2.B.md' }] },
+        { plateName: '拉达克_察隅达木', plateCode: 'LDK_CYDM', level: 3, bookId: 'book1', chapters: [{ title: '3.3.4.1.A', path: '/books/book1/3.3.4.1.A.md' }] },
+        { plateName: '华北', plateCode: 'HB_3', level: 3, bookId: 'book1', chapters: [{ title: '4.3.2.3.C', path: '/books/book1/4.3.2.3.C.md' }, { title: '4.3.2.1.A', path: '/books/book1/4.3.2.1.A.md' }] },
+        { plateName: '塔里木', plateCode: 'TLM', level: 3, bookId: 'book1', chapters: [{ title: '1.5.3.3.C', path: '/books/book1/1.5.3.3.C.md' }] },
+        { plateName: '近东_日本', plateCode: 'JD_RB', level: 3, bookId: 'book1', chapters: [{ title: '4.2.2.3.C', path: '/books/book1/4.2.2.3.C.md' }] },
+        { plateName: '古亚洲_卡拉库姆', plateCode: 'GYZ_KLKM', level: 3, bookId: 'book1', chapters: [{ title: '1.5.3.2.B', path: '/books/book1/1.5.3.2.B.md' }] },
+        { plateName: '南方江', plateCode: 'NFJ', level: 3, bookId: 'book1', chapters: [{ title: '4.2.2.5.B', path: '/books/book1/4.2.2.5.B.md' }, { title: '4.2.2.2.B', path: '/books/book1/4.2.2.2.B.md' }] },
+        { plateName: '中北', plateCode: 'ZB', level: 3, bookId: 'book1', chapters: [{ title: '1.5.3.1.A', path: '/books/book1/1.5.3.1.A.md' }] },
+        { plateName: '东古城', plateCode: 'DGC', level: 3, bookId: 'book1', chapters: [{ title: '1.4.3.4.D', path: '/books/book1/1.4.3.4.D.md' }, { title: '1.4.2.2.B', path: '/books/book1/1.4.2.2.B.md' }, { title: '1.5.3.1.A', path: '/books/book1/1.5.3.1.A.md' }] },
+        { plateName: '西伯利亚', plateCode: 'XBLY', level: 3, bookId: 'book1', chapters: [{ title: '1.4.3.3.C', path: '/books/book1/1.4.3.3.C.md' }, { title: '1.4.3.1.A', path: '/books/book1/1.4.3.1.A.md' }] },
+        { plateName: '末梢尔', plateCode: 'MSE', level: 3, bookId: 'book1', chapters: [{ title: '1.4.3.2.B', path: '/books/book1/1.4.3.2.B.md' }] }
+      ],
+      
+      // 第二本书：板块造貌构造学新论 (占位数据，可后续补充)
+      book2: [
+        // 二级板块示例
+        { plateName: '欧亚板块', plateCode: 'EYBK', level: 2, bookId: 'book2', chapters: [{ title: '1.1', path: '/books/book2/1.1.md' }] },
+        { plateName: '太平洋板块', plateCode: 'TPYBK', level: 2, bookId: 'book2', chapters: [{ title: '1.2', path: '/books/book2/1.2.md' }] },
+        { plateName: '非洲板块', plateCode: 'FZBK', level: 2, bookId: 'book2', chapters: [{ title: '1.3', path: '/books/book2/1.3.md' }] },
+        { plateName: '北美板块', plateCode: 'BMBK', level: 2, bookId: 'book2', chapters: [] },
+        { plateName: '南美板块', plateCode: 'NMBK', level: 2, bookId: 'book2', chapters: [] },
+        
+        // 三级板块示例
+        { plateName: '喜马拉雅造山带', plateCode: 'XMLY_ZSD', level: 3, bookId: 'book2', chapters: [{ title: '1.1.2.1.A', path: '/books/book2/1.1.2.1.A.md', parentChapter: '1.1' }] },
+        { plateName: '青藏高原', plateCode: 'QZGY', level: 3, bookId: 'book2', chapters: [{ title: '1.1.2.2.B', path: '/books/book2/1.1.2.2.B.md', parentChapter: '1.1' }] },
+        { plateName: '环太平洋带', plateCode: 'HTPY', level: 3, bookId: 'book2', chapters: [] }
+      ],
+      
+      // 第三本书：地星旋转动力学概论 (占位数据，可后续补充)
+      book3: [
+        // 二级板块示例
+        { plateName: '地核动力区', plateCode: 'DHDLQ', level: 2, bookId: 'book3', chapters: [{ title: '2.1', path: '/books/book3/2.1.md' }] },
+        { plateName: '地幔对流区', plateCode: 'DMDLQ', level: 2, bookId: 'book3', chapters: [{ title: '2.2', path: '/books/book3/2.2.md' }] },
+        { plateName: '岩石圈动力区', plateCode: 'YSQDLQ', level: 2, bookId: 'book3', chapters: [{ title: '2.3', path: '/books/book3/2.3.md' }] },
+        { plateName: '板块边界带', plateCode: 'BKBJD', level: 2, bookId: 'book3', chapters: [] },
+        
+        // 三级板块示例
+        { plateName: '内核旋转', plateCode: 'NHXZ', level: 3, bookId: 'book3', chapters: [{ title: '2.1.1.1.A', path: '/books/book3/2.1.1.1.A.md', parentChapter: '2.1' }] },
+        { plateName: '外核对流', plateCode: 'WHDL', level: 3, bookId: 'book3', chapters: [{ title: '2.1.1.2.B', path: '/books/book3/2.1.1.2.B.md', parentChapter: '2.1' }] },
+        { plateName: '地幔柱运动', plateCode: 'DMZYD', level: 3, bookId: 'book3', chapters: [{ title: '2.2.1.1.A', path: '/books/book3/2.2.1.1.A.md', parentChapter: '2.2' }] }
+      ]
+    };
+    
+    // 合并所有书籍的板块数据
     const plateData = [
-      {
-        plateName: '澳洲',
-        plateCode: 'AZ',
-        level: 2,
-        chapters: [
-          { title: '2.3', path: '/books/geology/2.3.md' }
-        ]
-      },
-      {
-        plateName: '东南亚-班达海',
-        plateCode: 'DNY_BDH',
-        level: 2,
-        chapters: [
-          { title: '4.5', path: '/books/geology/4.5.md' }
-        ]
-      },
-      {
-        plateName: '两苏海',
-        plateCode: 'LSH',
-        level: 2,
-        chapters: [
-          { title: '4.7', path: '/books/geology/4.7.md' }
-        ]
-      },
-      {
-        plateName: '大印度',
-        plateCode: 'DYD',
-        level: 2,
-        chapters: [
-          { title: '2.2', path: '/books/geology/2.2.md' }
-        ]
-      },
-      {
-        plateName: '南海',
-        plateCode: 'NH',
-        level: 2,
-        chapters: [
-          { title: '4.6', path: '/books/geology/4.6.md' }
-        ]
-      },
-      {
-        plateName: '泛非洲',
-        plateCode: 'FFZ',
-        level: 2,
-        chapters: [
-          { title: '2.1', path: '/books/geology/2.1.md' }
-        ]
-      },
-      {
-        plateName: '菲律宾海',
-        plateCode: 'FLBH',
-        level: 2,
-        chapters: []
-      },
-      {
-        plateName: '华南',
-        plateCode: 'HN',
-        level: 2,
-        chapters: [
-          { title: '4.4', path: '/books/geology/4.4.md' }
-        ]
-      },
-      {
-        plateName: '路间东特提斯',
-        plateCode: 'LJDTTS',
-        level: 2,
-        chapters: [
-          { title: '3.3', path: '/books/geology/3.3.md' }
-        ]
-      },
-      {
-        plateName: '华北',
-        plateCode: 'HB',
-        level: 2,
-        chapters: [
-          { title: '4.3', path: '/books/geology/4.3.md' }
-        ]
-      },
-      {
-        plateName: '东北亚',
-        plateCode: 'DBY',
-        level: 2,
-        chapters: [
-          { title: '4.2', path: '/books/geology/4.2.md' }
-        ]
-      },
-      {
-        plateName: '中亚',
-        plateCode: 'ZY',
-        level: 2,
-        chapters: [
-          { title: '1.5', path: '/books/geology/1.5.md' }
-        ]
-      },
-      {
-        plateName: '北亚',
-        plateCode: 'BY',
-        level: 2,
-        chapters: [
-          { title: '1.4', path: '/books/geology/1.4.md' }
-        ]
-      },
-      {
-        plateName: '北极区',
-        plateCode: 'BJQ',
-        level: 2,
-        chapters: [
-          { title: '4.1', path: '/books/geology/4.1.md' }
-        ]
-      },
-      // 三级板块
-      {
-        plateName: '班达海',
-        plateCode: 'BDH',
-        level: 3,
-        chapters: [
-          { 
-            title: '4.5.2.4.D', 
-            path: '/books/geology/4.5.2.4.D.md',
-            parentChapter: '4.5',
-            subsection: '4.5.2.4.D'
-          }
-        ]
-      },
-      {
-        plateName: '毕地延定',
-        plateCode: 'BDYD',
-        level: 3,
-        chapters: [
-          { title: '4.5.2.3.C', path: '/books/geology/4.5.2.3.C.md', parentChapter: '4.5', subsection: '4.5.2.3.C' }
-        ]
-      },
-      {
-        plateName: '孟加拉湾',
-        plateCode: 'MJLW',
-        level: 3,
-        chapters: [
-          { title: '2.2.5.2.B', path: '/books/geology/2.2.5.2.B.md', parentChapter: '2.2', subsection: '2.2.5.2.B' }
-        ]
-      },
-      {
-        plateName: '西面_宾达曼',
-        plateCode: 'XM_BDM',
-        level: 3,
-        chapters: [
-          { title: '4.5.2.1.A', path: '/books/geology/4.5.2.1.A.md', parentChapter: '4.5', subsection: '4.5.2.1.A' }
-        ]
-      },
-      {
-        plateName: '阿拉伯',
-        plateCode: 'ALB',
-        level: 3,
-        chapters: [
-          { title: '2.1.2.3.H', path: '/books/geology/2.1.2.3.H.md', parentChapter: '2.1', subsection: '2.1.2.3.H' }
-        ]
-      },
-      {
-        plateName: '印支半岛',
-        plateCode: 'YZBD',
-        level: 3,
-        chapters: [
-          { title: '4.5.2.2.B', path: '/books/geology/4.5.2.2.B.md', parentChapter: '4.5', subsection: '4.5.2.2.B' }
-        ]
-      },
-      {
-        plateName: '印度半岛',
-        plateCode: 'YDBD',
-        level: 3,
-        chapters: [
-          { title: '2.2.5.2.B', path: '/books/geology/2.2.5.2.B.md' },
-          { title: '2.2.5.1.A', path: '/books/geology/2.2.5.1.A.md' }
-        ]
-      },
-      {
-        plateName: '无德_喜马拉雅',
-        plateCode: 'WD_XMLY',
-        level: 3,
-        chapters: [
-          { title: '3.3.4.4.D', path: '/books/geology/3.3.4.4.D.md' }
-        ]
-      },
-      {
-        plateName: '青东南_朝鲜半岛',
-        plateCode: 'QDN_CXBD',
-        level: 3,
-        chapters: [
-          { title: '4.3.2.2.B', path: '/books/geology/4.3.2.2.B.md' }
-        ]
-      },
-      {
-        plateName: '拉达克_察隅达木',
-        plateCode: 'LDK_CYDM',
-        level: 3,
-        chapters: [
-          { title: '3.3.4.1.A', path: '/books/geology/3.3.4.1.A.md' }
-        ]
-      },
-      {
-        plateName: '华北',
-        plateCode: 'HB_3',
-        level: 3,
-        chapters: [
-          { title: '4.3.2.3.C', path: '/books/geology/4.3.2.3.C.md' },
-          { title: '4.3.2.1.A', path: '/books/geology/4.3.2.1.A.md' }
-        ]
-      },
-      {
-        plateName: '塔里木',
-        plateCode: 'TLM',
-        level: 3,
-        chapters: [
-          { title: '1.5.3.3.C', path: '/books/geology/1.5.3.3.C.md' }
-        ]
-      },
-      {
-        plateName: '近东_日本',
-        plateCode: 'JD_RB',
-        level: 3,
-        chapters: [
-          { title: '4.2.2.3.C', path: '/books/geology/4.2.2.3.C.md' }
-        ]
-      },
-      {
-        plateName: '古亚洲_卡拉库姆',
-        plateCode: 'GYZ_KLKM',
-        level: 3,
-        chapters: [
-          { title: '1.5.3.2.B', path: '/books/geology/1.5.3.2.B.md' }
-        ]
-      },
-      {
-        plateName: '南方江',
-        plateCode: 'NFJ',
-        level: 3,
-        chapters: [
-          { title: '4.2.2.5.B', path: '/books/geology/4.2.2.5.B.md' },
-          { title: '4.2.2.2.B', path: '/books/geology/4.2.2.2.B.md' }
-        ]
-      },
-      {
-        plateName: '中北',
-        plateCode: 'ZB',
-        level: 3,
-        chapters: [
-          { title: '1.5.3.1.A', path: '/books/geology/1.5.3.1.A.md' }
-        ]
-      },
-      {
-        plateName: '东古城',
-        plateCode: 'DGC',
-        level: 3,
-        chapters: [
-          { title: '1.4.3.4.D', path: '/books/geology/1.4.3.4.D.md' },
-          { title: '1.4.2.2.B', path: '/books/geology/1.4.2.2.B.md' },
-          { title: '1.5.3.1.A', path: '/books/geology/1.5.3.1.A.md' }
-        ]
-      },
-      {
-        plateName: '西伯利亚',
-        plateCode: 'XBLY',
-        level: 3,
-        chapters: [
-          { title: '1.4.3.3.C', path: '/books/geology/1.4.3.3.C.md' },
-          { title: '1.4.3.1.A', path: '/books/geology/1.4.3.1.A.md' }
-        ]
-      },
-      {
-        plateName: '末梢尔',
-        plateCode: 'MSE',
-        level: 3,
-        chapters: [
-          { title: '1.4.3.2.B', path: '/books/geology/1.4.3.2.B.md' }
-        ]
-      }
+      ...plateDataByBook.book1,
+      ...plateDataByBook.book2,
+      ...plateDataByBook.book3
     ];
     
     // 尝试从后端获取文件ID映射（如果后端可用）
@@ -796,6 +640,50 @@ function closeViewer() {
   color: rgba(255, 255, 255, 0.5);
   line-height: 1.5;
 }
+
+/* 书籍选择标签页 */
+.book-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 6px;
+}
+
+.book-tab {
+  flex: 1;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: center;
+  line-height: 1.3;
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.book-tab:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.8);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.book-tab.active {
+  background: linear-gradient(135deg, #409eff 0%, #66b3ff 100%);
+  color: white;
+  border-color: transparent;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(64, 158, 255, 0.3);
+}
+
 
 /* 加载按钮 */
 .load-section {
