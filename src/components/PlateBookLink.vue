@@ -199,9 +199,15 @@ const jumpingChapter = ref<string | null>(null);
 // 书籍列表
 const books = ref<Book[]>([
   { id: 'book1', title: '板块构造与地貌行迹', apiBookId: 1 },
-  { id: 'book2', title: '板块造貌构造学新论', apiBookId: 2 },
-  { id: 'book3', title: '地星旋转动力学概论', apiBookId: 3 }
+  { id: 'book2', title: '板块造貌构造学新论', apiBookId: 6 },
+  { id: 'book3', title: '地星旋转动力学概论', apiBookId: 7 }
 ]);
+
+// 根据内部bookId获取后端apiBookId
+function getApiBookId(bookId: string): number {
+  const found = books.value.find(b => b.id === bookId);
+  return found?.apiBookId ?? 1;
+}
 
 // 当前选中的书籍
 const selectedBookId = ref('book1');
@@ -315,18 +321,47 @@ async function loadPlateBookLinks() {
         { plateName: '环太平洋带', plateCode: 'HTPY', level: 3, bookId: 'book2', chapters: [] }
       ],
       
-      // 第三本书：地星旋转动力学概论 (占位数据，可后续补充)
+      // 第三本书：地星旋转动力学概论（bookId=7）
       book3: [
-        // 二级板块示例
-        { plateName: '地核动力区', plateCode: 'DHDLQ', level: 2, bookId: 'book3', chapters: [{ title: '2.1', path: '/books/book3/2.1.md' }] },
-        { plateName: '地幔对流区', plateCode: 'DMDLQ', level: 2, bookId: 'book3', chapters: [{ title: '2.2', path: '/books/book3/2.2.md' }] },
-        { plateName: '岩石圈动力区', plateCode: 'YSQDLQ', level: 2, bookId: 'book3', chapters: [{ title: '2.3', path: '/books/book3/2.3.md' }] },
-        { plateName: '板块边界带', plateCode: 'BKBJD', level: 2, bookId: 'book3', chapters: [] },
-        
-        // 三级板块示例
-        { plateName: '内核旋转', plateCode: 'NHXZ', level: 3, bookId: 'book3', chapters: [{ title: '2.1.1.1.A', path: '/books/book3/2.1.1.1.A.md', parentChapter: '2.1' }] },
-        { plateName: '外核对流', plateCode: 'WHDL', level: 3, bookId: 'book3', chapters: [{ title: '2.1.1.2.B', path: '/books/book3/2.1.1.2.B.md', parentChapter: '2.1' }] },
-        { plateName: '地幔柱运动', plateCode: 'DMZYD', level: 3, bookId: 'book3', chapters: [{ title: '2.2.1.1.A', path: '/books/book3/2.2.1.1.A.md', parentChapter: '2.2' }] }
+        // 二级板块（用户提供）
+        { 
+          plateName: '澳洲板块', 
+          plateCode: 'AZBK', 
+          level: 2, 
+          bookId: 'book3', 
+          chapters: [
+            { title: '1.2.1.4', path: '/books/book3/1.2.1.4.md' },
+            { title: '1.2.4.4', path: '/books/book3/1.2.4.4.md' },
+            { title: '1.2.4.5', path: '/books/book3/1.2.4.5.md' },
+            { title: '1.3.2.3', path: '/books/book3/1.3.2.3.md' },
+            { title: '2.1.3.1', path: '/books/book3/2.1.3.1.md' },
+            { title: '2.3.4.2', path: '/books/book3/2.3.4.2.md' },
+            { title: '3.4.1.1', path: '/books/book3/3.4.1.1.md' },
+            { title: '3.4.2.2', path: '/books/book3/3.4.2.2.md' },
+            { title: '4.1.1', path: '/books/book3/4.1.1.md' }
+          ] 
+        },
+        { 
+          plateName: '泛非洲板块', 
+          plateCode: 'FFFZBK', 
+          level: 2, 
+          bookId: 'book3', 
+          chapters: [
+            { title: '1.2.2.2', path: '/books/book3/1.2.2.2.md' },
+            { title: '1.2.2.6', path: '/books/book3/1.2.2.6.md' },
+            { title: '1.3.1.2', path: '/books/book3/1.3.1.2.md' },
+            { title: '2.1.2.1', path: '/books/book3/2.1.2.1.md' },
+            { title: '2.3.3.3', path: '/books/book3/2.3.3.3.md' },
+            { title: '2.4.1.2', path: '/books/book3/2.4.1.2.md' },
+            { title: '2.5.1.2', path: '/books/book3/2.5.1.2.md' },
+            { title: '3.3.3.1', path: '/books/book3/3.3.3.1.md' },
+            { title: '3.3.4.4', path: '/books/book3/3.3.4.4.md' },
+            { title: '4.2.3.2', path: '/books/book3/4.2.3.2.md' },
+            { title: '4.3.1.2', path: '/books/book3/4.3.1.2.md' },
+            { title: '4.3.1.3', path: '/books/book3/4.3.1.3.md' }
+          ] 
+        }
+        // 三级板块信息暂缺，可后续补充
       ]
     };
     
@@ -339,28 +374,33 @@ async function loadPlateBookLinks() {
     
     // 尝试从后端获取文件ID映射（如果后端可用）
     try {
-      const mdFilesUrl = 'http://localhost:8080/api/files/markdown?bookId=1';
-      const mdResponse = await axios.get(mdFilesUrl, { timeout: 3000 });
-      console.log('✅ 后端连接成功，获取到md文件列表:', mdResponse.data);
-      
-      const mdFiles = mdResponse.data?.files || [];
-      
-      // 创建property到fileId的映射
-      const propertyToFileMap = new Map<string, any>();
-      mdFiles.forEach((file: any) => {
-        if (file.property && file.id) {
-          propertyToFileMap.set(file.property, file);
+      // 针对每本书拉取对应 bookId 的 markdown 列表，并建立 property->fileId 映射
+      const propertyMapByBook = new Map<string, Map<string, any>>();
+      for (const b of books.value) {
+        try {
+        const mdFilesUrl = `http://localhost:8080/api/files/markdown?bookId=${b.apiBookId}`;
+          const mdResponse = await axios.get(mdFilesUrl, { timeout: 3000 });
+          console.log(`✅ bookId=${b.apiBookId} 获取md文件列表:`, mdResponse.data);
+          const mdFiles = mdResponse.data?.files || [];
+          const propertyToFileMap = new Map<string, any>();
+          mdFiles.forEach((file: any) => {
+            if (file.property && file.id) {
+              propertyToFileMap.set(file.property, file);
+            }
+          });
+          propertyMapByBook.set(b.id, propertyToFileMap);
+        } catch (err) {
+          console.warn(`⚠️ 获取 bookId=${b.apiBookId} 的md列表失败，跳过`, err);
         }
-      });
+      }
       
-      console.log('Property到文件的映射:', propertyToFileMap);
-      
-      // 为每个章节匹配fileId
+      // 为每个章节匹配 fileId（按所属书籍）
       plateData.forEach((plate: PlateLink) => {
-        if (plate.chapters && plate.chapters.length > 0) {
+        const mapForBook = propertyMapByBook.get(plate.bookId || 'book1');
+        if (plate.chapters && plate.chapters.length > 0 && mapForBook) {
           plate.chapters = plate.chapters.map((chapter: Chapter) => {
             const property = chapter.title;
-            const fileInfo = propertyToFileMap.get(property);
+            const fileInfo = mapForBook.get(property);
             
             if (fileInfo) {
               return {
@@ -375,7 +415,7 @@ async function loadPlateBookLinks() {
       });
       
       const chaptersWithFile = plateData.reduce((count, plate) => {
-        return count + (plate.chapters?.filter(c => c.fileId).length || 0);
+        return count + (plate.chapters?.filter((c: Chapter) => Boolean((c as Chapter).fileId)).length || 0);
       }, 0);
       
       statusMsg.value = `成功加载 ${plateData.length} 个板块，匹配到 ${chaptersWithFile} 个章节文件`;
@@ -418,6 +458,16 @@ async function jumpToChapter(chapter: Chapter, plateName?: string) {
   console.log('跳转到章节:', chapter);
   
   try {
+    // 确定当前章节所属书籍的 apiBookId
+    const apiBookId = (() => {
+      const plateFound = plateLinks.value.find(p => {
+        if (plateName && p.plateName !== plateName) return false;
+        return p.chapters?.some(c => c.title === chapter.title);
+      });
+      if (plateFound?.bookId) return getApiBookId(plateFound.bookId);
+      return getApiBookId(selectedBookId.value);
+    })();
+
     jumpingChapter.value = chapter.title;
     viewerLoading.value = true;
     showViewer.value = true;
@@ -439,7 +489,7 @@ async function jumpToChapter(chapter: Chapter, plateName?: string) {
       
       // 第一步：获取父章节的fileId
       try {
-        const mdFilesUrl = `http://localhost:8080/api/files/markdown?bookId=1`;
+        const mdFilesUrl = `http://localhost:8080/api/files/markdown?bookId=${apiBookId}`;
         const mdResponse = await axios.get(mdFilesUrl, { timeout: 3000 });
         const mdFiles = mdResponse.data?.files || [];
         
@@ -450,7 +500,7 @@ async function jumpToChapter(chapter: Chapter, plateName?: string) {
           console.log(`✅ 找到父章节文件: ${parentChapter}, fileId: ${parentFile.id}`);
           
           // 第二步：获取父章节的完整内容
-          const parentUrl = `http://localhost:8080/api/files/markdown/${parentFile.id}/content`;
+          const parentUrl = `http://localhost:8080/api/files/markdown/${parentFile.id}/content?bookId=${apiBookId}`;
           const parentResponse = await axios.get(parentUrl, { timeout: 5000 });
           const fullContent = parentResponse.data?.content || '';
           
@@ -481,7 +531,7 @@ async function jumpToChapter(chapter: Chapter, plateName?: string) {
       // 二级板块的原有逻辑
       if (chapter.fileId) {
         try {
-          const url = `http://localhost:8080/api/files/markdown/${chapter.fileId}/content`;
+          const url = `http://localhost:8080/api/files/markdown/${chapter.fileId}/content?bookId=${apiBookId}`;
           console.log('📡 请求章节内容 URL:', url);
           
           const response = await axios.get(url, { timeout: 5000 });
