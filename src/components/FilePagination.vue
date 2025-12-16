@@ -355,11 +355,11 @@
               :on-change="handleTableFolderChange"
               :file-list="uploadForm.tableFiles"
               multiple
-              accept=".xlsx,.xls,.csv"
+              accept=".xlsx,.xls,.csv,.png,.jpg,.jpeg,.gif,.bmp,.webp"
             >
               <el-button type="primary">选择表格</el-button>
               <template #tip>
-                <div class="el-upload__tip">支持 XLSX、XLS、CSV 格式</div>
+                <div class="el-upload__tip">支持 XLSX、XLS、CSV 以及表格图片（PNG、JPG、JPEG、GIF、BMP、WEBP）</div>
               </template>
             </el-upload>
           </el-form-item>
