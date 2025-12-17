@@ -4,13 +4,6 @@
     <div class="sidebar" :class="{ collapsed: sidebarCollapsed }">
       <!-- 顶部Logo区域 -->
       <div class="sidebar-header">
-        <div class="logo-container">
-          <svg class="logo-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </div>
         <button class="collapse-btn" @click="toggleSidebar">
           <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -23,11 +16,11 @@
         <div class="nav-section">
           <div class="nav-section-title" v-if="!sidebarCollapsed">核心功能</div>
           
-          <div class="nav-item" @click="navigateToDocumentDigitalization" title="地质文档数字化">
+          <div class="nav-item" @click="navigateToDocumentDigitalization" title="智能OCR识别">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M9 12H15M9 16H15M17 21H7C5.89543 21 5 20.1046 5 19V5C5 3.89543 5.89543 3 7 3H12.5858C12.851 3 13.1054 3.10536 13.2929 3.29289L18.7071 8.70711C18.8946 8.89464 19 9.149 19 9.41421V19C19 20.1046 18.1046 21 17 21Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
-            <span class="nav-text" v-if="!sidebarCollapsed">文档数字化</span>
+            <span class="nav-text" v-if="!sidebarCollapsed">智能OCR识别</span>
         </div>
 
           <div class="nav-item" @click="navigateToMetadataGenerator" title="元数据生成">
@@ -38,96 +31,73 @@
             <span class="nav-text" v-if="!sidebarCollapsed">元数据生成</span>
           </div>
 
-          <div class="nav-item" @click="navigateToFileList" title="文件管理">
-            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M3 7C3 5.89543 3.89543 5 5 5H9L11 7H19C20.1046 7 21 7.89543 21 9V17C21 18.1046 20.1046 19 19 19H5C3.89543 19 3 18.1046 3 17V7Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            <span class="nav-text" v-if="!sidebarCollapsed">文件管理</span>
-        </div>
 
-          <div class="nav-item" @click="toggleMeasurePanel" title="测量工具">
-            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M4 4L20 20M4 20L20 4M8 12H16M12 8V16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            <span class="nav-text" v-if="!sidebarCollapsed">测量工具</span>
-            <!-- 测量工具子菜单 -->
-            <div class="sub-menu" v-show="showMeasurePanel">
-              <div class="sub-menu-item" @click.stop="handleMeasure('reset')">
-                <svg class="sub-icon" viewBox="0 0 24 24" fill="none">
-                  <path d="M21.168 8A10.003 10.003 0 0 0 12 2C6.815 2 2.55 5.947 2.05 11" stroke="currentColor" stroke-width="2"/>
-                  <path d="M3 16a10.003 10.003 0 0 0 9 6c5.185 0 9.45-3.947 9.95-9" stroke="currentColor" stroke-width="2"/>
-                </svg>
-              <span>重置视图</span>
-            </div>
-              <div class="sub-menu-item" @click.stop="handleMeasure('distance')">
-                <svg class="sub-icon" viewBox="0 0 24 24" fill="none">
-                  <path d="M5 12H19M5 12L9 8M5 12L9 16M19 12L15 8M19 12L15 16" stroke="currentColor" stroke-width="2"/>
-                </svg>
-              <span>测距</span>
-            </div>
-              <div class="sub-menu-item" @click.stop="handleMeasure('area')">
-                <svg class="sub-icon" viewBox="0 0 24 24" fill="none">
-                  <path d="M12 2L2 7V17L12 22L22 17V7L12 2Z" stroke="currentColor" stroke-width="2"/>
-                </svg>
-              <span>测面</span>
-            </div>
-              <div class="sub-menu-item" @click.stop="handleMeasure('clear')">
-                <svg class="sub-icon" viewBox="0 0 24 24" fill="none">
-                  <path d="M3 6H21M8 6V4C8 2.89543 8.89543 2 10 2H14C15.1046 2 16 2.89543 16 4V6M19 6V20C19 21.1046 18.1046 22 17 22H7C5.89543 22 5 21.1046 5 20V6H19Z" stroke="currentColor" stroke-width="2"/>
-                </svg>
-              <span>清除</span>
-            </div>
-          </div>
-        </div>
 
-          <div class="nav-item" @click="toggleMapDataPanel" title="底图数据">
-            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M3 3V16C3 17.1046 3.89543 18 5 18H16M21 21L21 8M21 21L8 21M21 21L16 16L12 19L8 15L3 19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            <span class="nav-text" v-if="!sidebarCollapsed">底图数据</span>
-        </div>
+<!--          <div class="nav-item" @click="toggleMeasurePanel" title="测量工具">-->
+<!--            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">-->
+<!--              <path d="M4 4L20 20M4 20L20 4M8 12H16M12 8V16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>-->
+<!--            </svg>-->
+<!--            <span class="nav-text" v-if="!sidebarCollapsed">测量工具</span>-->
+<!--            &lt;!&ndash; 测量工具子菜单 &ndash;&gt;-->
+<!--            <div class="sub-menu" v-show="showMeasurePanel">-->
+<!--              <div class="sub-menu-item" @click.stop="handleMeasure('reset')">-->
+<!--                <svg class="sub-icon" viewBox="0 0 24 24" fill="none">-->
+<!--                  <path d="M21.168 8A10.003 10.003 0 0 0 12 2C6.815 2 2.55 5.947 2.05 11" stroke="currentColor" stroke-width="2"/>-->
+<!--                  <path d="M3 16a10.003 10.003 0 0 0 9 6c5.185 0 9.45-3.947 9.95-9" stroke="currentColor" stroke-width="2"/>-->
+<!--                </svg>-->
+<!--              <span>重置视图</span>-->
+<!--            </div>-->
+<!--              <div class="sub-menu-item" @click.stop="handleMeasure('distance')">-->
+<!--                <svg class="sub-icon" viewBox="0 0 24 24" fill="none">-->
+<!--                  <path d="M5 12H19M5 12L9 8M5 12L9 16M19 12L15 8M19 12L15 16" stroke="currentColor" stroke-width="2"/>-->
+<!--                </svg>-->
+<!--              <span>测距</span>-->
+<!--            </div>-->
+<!--              <div class="sub-menu-item" @click.stop="handleMeasure('area')">-->
+<!--                <svg class="sub-icon" viewBox="0 0 24 24" fill="none">-->
+<!--                  <path d="M12 2L2 7V17L12 22L22 17V7L12 2Z" stroke="currentColor" stroke-width="2"/>-->
+<!--                </svg>-->
+<!--              <span>测面</span>-->
+<!--            </div>-->
+<!--              <div class="sub-menu-item" @click.stop="handleMeasure('clear')">-->
+<!--                <svg class="sub-icon" viewBox="0 0 24 24" fill="none">-->
+<!--                  <path d="M3 6H21M8 6V4C8 2.89543 8.89543 2 10 2H14C15.1046 2 16 2.89543 16 4V6M19 6V20C19 21.1046 18.1046 22 17 22H7C5.89543 22 5 21.1046 5 20V6H19Z" stroke="currentColor" stroke-width="2"/>-->
+<!--                </svg>-->
+<!--              <span>清除</span>-->
+<!--            </div>-->
+<!--          </div>-->
+<!--        </div>-->
 
-          <div class="nav-item" @click="navigateToBooks" title="目录体系重构">
+<!--          <div class="nav-item" @click="toggleMapDataPanel" title="底图数据">-->
+<!--            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">-->
+<!--              <path d="M3 3V16C3 17.1046 3.89543 18 5 18H16M21 21L21 8M21 21L8 21M21 21L16 16L12 19L8 15L3 19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>-->
+<!--            </svg>-->
+<!--            <span class="nav-text" v-if="!sidebarCollapsed">底图数据</span>-->
+<!--        </div>-->
+
+          <div class="nav-item" @click="navigateToBooks" title="目录体系治理">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M12 6.5C10.5 4.5 8 3 5 3V19C8 19 10.5 20.5 12 22.5C13.5 20.5 16 19 19 19V3C16 3 13.5 4.5 12 6.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
-            <span class="nav-text" v-if="!sidebarCollapsed">目录体系重构</span>
+            <span class="nav-text" v-if="!sidebarCollapsed">目录体系治理</span>
         </div>
 
-          <div class="nav-item" @click="togglePlateManager" title="板块数据管理">
+          <div class="nav-item" @click="navigateToFileList" title="用户管理中心">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M3 7C3 5.89543 3.89543 5 5 5H9L11 7H19C20.1046 7 21 7.89543 21 9V17C21 18.1046 20.1046 19 19 19H5C3.89543 19 3 18.1046 3 17V7Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span class="nav-text" v-if="!sidebarCollapsed">用户管理中心</span>
+        </div>
+
+          <div class="nav-item" @click="togglePlateManager" title="文本地图联动">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M3 7V17C3 18.1046 3.89543 19 5 19H19C20.1046 19 21 18.1046 21 17V7C21 5.89543 20.1046 5 19 5H5C3.89543 5 3 5.89543 3 7Z" stroke="currentColor" stroke-width="2"/>
               <path d="M3 10H21M8 5V19" stroke="currentColor" stroke-width="2"/>
             </svg>
-            <span class="nav-text" v-if="!sidebarCollapsed">板块管理</span>
+            <span class="nav-text" v-if="!sidebarCollapsed">文本地图联动</span>
           </div>
 
-          <div class="nav-item" @click="toggleBasemapPanel" title="底图切换">
-            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M3 3H21V21H3V3Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M3 9H21M3 15H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M12 3V21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            <span class="nav-text" v-if="!sidebarCollapsed">底图切换</span>
-            <!-- 底图切换子菜单 -->
-            <div class="sub-menu basemap-sub-menu" v-show="showBasemapPanel">
-              <div 
-                v-for="map in basemaps" 
-                :key="map.id"
-                class="sub-menu-item"
-                :class="{ active: currentBasemap === map.id }"
-                @click.stop="changeBasemap(map.id)"
-              >
-                <svg class="sub-icon" viewBox="0 0 24 24" fill="none">
-                  <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
-                </svg>
-                <span>{{ map.name }}</span>
-                <svg v-if="currentBasemap === map.id" class="check-icon" viewBox="0 0 24 24" fill="none">
-                  <path d="M5 13L9 17L19 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </div>
-        </div>
-      </div>
+
 
           <div class="nav-item" @click="toggleAIChat" title="AI助手">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -149,7 +119,7 @@
             </svg>
           </div>
           <div class="user-details">
-            <div class="user-name">地质研究员</div>
+            <div class="user-name">Geodata</div>
             <div class="user-status">在线 (点击退出)</div>
           </div>
         </div>
@@ -169,11 +139,39 @@
         @basemap-loaded="handleBasemapLoaded"
         :currentBasemap="currentBasemap"
         :showPlateManager="showPlateManager"
-        @close-plate-manager="showPlateManager = false"
+        @close-plate-manager="showPlateManager = false; showMap = false"
         ref="mapRef"
         @book-viewer-change="handleBookViewerChange"
       />
+      
+      <!-- 文本工作流展示 -->
+      <TextWorkflow v-else />
     
+    <!-- 底图切换悬浮控件 -->
+    <div class="basemap-control" v-if="showMap">
+      <div class="basemap-trigger" @click="toggleBasemapPanel" title="切换底图">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M9 20L3 17V4L9 7M9 20L15 17M9 20V7M15 17L21 20V7L15 4M15 17V4M9 7L15 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      
+      <!-- 悬浮菜单 -->
+      <div class="basemap-menu" v-show="showBasemapPanel">
+        <div 
+          v-for="map in basemaps" 
+          :key="map.id"
+          class="basemap-item"
+          :class="{ active: currentBasemap === map.id }"
+          @click="changeBasemap(map.id)"
+        >
+          <span>{{ map.name }}</span>
+          <svg v-if="currentBasemap === map.id" class="check-icon" viewBox="0 0 24 24" fill="none">
+            <path d="M5 13L9 17L19 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+
     <!-- 专题底图数据面板 -->
     <div id="controls" 
       v-show="showMapDataPanel" 
@@ -229,6 +227,7 @@ import { useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import MapVisualization from '../components/MapVisualization.vue';
 import AIChatBox from '../components/AIChatBox.vue';
+import TextWorkflow from '../components/TextWorkflow.vue';
 
 // 定义图层接口
 interface Layer {
@@ -269,7 +268,7 @@ const emit = defineEmits<{
   (e: 'change-basemap', mapId: string): void;
 }>();
 
-const showMap = ref(true);
+const showMap = ref(false);
 const showMapDataPanel = ref(false);
 const showBookViewer = ref(false);
 const mapRef = ref<InstanceType<typeof MapVisualization> | null>(null);
@@ -533,7 +532,7 @@ const handleMeasure = (action: string) => {
 // 添加点击外部关闭面板
 const handleClickOutside = (event: MouseEvent) => {
   const target = event.target as HTMLElement;
-  if (!target.closest('.nav-item')) {
+  if (!target.closest('.nav-item') && !target.closest('.basemap-control')) {
     showMeasurePanel.value = false;
     showBasemapPanel.value = false;
   }
@@ -547,6 +546,7 @@ const navigateToBooks = () => {
 // 切换板块数据管理面板
 const togglePlateManager = () => {
   showPlateManager.value = !showPlateManager.value;
+  showMap.value = showPlateManager.value;
 };
 
 // 切换侧边栏折叠状态
@@ -718,9 +718,9 @@ onUnmounted(() => {
 .nav-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 12px;
-  margin: 2px 0;
+  gap: 16px; 
+  padding: 16px 20px;
+  margin: 12px 0;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -730,7 +730,7 @@ onUnmounted(() => {
 
 .sidebar.collapsed .nav-item {
   justify-content: center;
-  padding: 12px;
+  padding: 16px;
 }
 
 .nav-item::before {
@@ -739,10 +739,10 @@ onUnmounted(() => {
   left: 0;
   top: 50%;
   transform: translateY(-50%);
-  width: 3px;
+  width: 4px;
   height: 0;
   background: linear-gradient(180deg, #10b981 0%, #059669 100%);
-  border-radius: 0 3px 3px 0;
+  border-radius: 0 4px 4px 0;
   transition: height 0.2s ease;
 }
 
@@ -761,14 +761,14 @@ onUnmounted(() => {
 }
 
 .nav-icon {
-  width: 22px;
-  height: 22px;
+  width: 26px;
+  height: 26px;
   flex-shrink: 0;
   stroke-width: 2;
 }
 
 .nav-text {
-  font-size: 14px;
+  font-size: 18px;
   font-weight: 500;
   white-space: nowrap;
 }
@@ -1153,5 +1153,93 @@ onUnmounted(() => {
 /* AI助手聊天盒子样式 */
 .ai-chat-with-viewer {
   right: 42%;
+}
+
+/* 底图切换悬浮控件样式 */
+.basemap-control {
+  position: fixed;
+  bottom: 80px;
+  right: 40px;
+  z-index: 9999;
+}
+
+.basemap-trigger {
+  width: 48px;
+  height: 48px;
+  background: rgba(31, 41, 55, 0.9);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.basemap-trigger:hover {
+  background: rgba(45, 55, 72, 0.9);
+  transform: translateY(-2px);
+  color: #3b82f6;
+}
+
+.basemap-trigger svg {
+  width: 24px;
+  height: 24px;
+}
+
+.basemap-menu {
+  position: absolute;
+  bottom: 60px;
+  right: 0;
+  width: 160px;
+  background: rgba(31, 41, 55, 0.95);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transform-origin: bottom right;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.basemap-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  cursor: pointer;
+  border-radius: 6px;
+  color: #d1d5db;
+  transition: all 0.2s ease;
+  font-size: 14px;
+}
+
+.basemap-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.basemap-item.active {
+  background: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+}
+
+.basemap-item .check-icon {
+  width: 16px;
+  height: 16px;
 }
 </style>

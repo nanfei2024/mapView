@@ -2,12 +2,6 @@
   <div class="main-layout">
     <!-- 顶部导航栏 -->
     <header class="top-nav">
-      <div class="nav-brand">
-        <div class="logo-ring">
-          <div class="ring-inner"></div>
-        </div>
-        <span class="brand-text">GEOGRAPHIC MULTIMODAL</span>
-      </div>
       
       <nav class="nav-items">
         <div 
@@ -152,7 +146,7 @@ onUnmounted(() => {
   flex: 1;
   display: flex;
   justify-content: center;
-  gap: 24px;
+  gap: 48px;
   height: 100%;
 }
 
@@ -161,14 +155,14 @@ onUnmounted(() => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 0 40px;
+  gap: 12px;
+  padding: 0 50px;
   cursor: pointer;
   position: relative;
   transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
   color: #94a3b8;
   height: 100%;
-  min-width: 140px;
+  min-width: 160px;
   border-bottom: 4px solid transparent;
 }
 
@@ -189,15 +183,15 @@ onUnmounted(() => {
 }
 
 .nav-icon {
-  font-size: 34px;
+  font-size: 42px;
   transition: all 0.3s ease;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
 }
 
 .nav-label {
-  font-size: 18px;
+  font-size: 22px;
   font-weight: 700;
-  letter-spacing: 1.5px;
+  letter-spacing: 2px;
 }
 
 .nav-indicator {

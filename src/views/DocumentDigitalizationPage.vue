@@ -9,7 +9,7 @@
           </div>
           <h1 class="page-title">
             <span class="title-icon">🌍</span>
-            <span class="title-text">地质文档数字化</span>
+            <span class="title-text">智能OCR识别</span>
           </h1>
         </div>
         <div class="header-subtitle">智能识别地质报告 · 精准提取专业数据 · 高效构建知识图谱</div>

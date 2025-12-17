@@ -12,6 +12,7 @@ import LoginPage from '../views/LoginPage.vue';
 import MainLayout from '../views/MainLayout.vue';
 import ModulePlaceholder from '../views/ModulePlaceholder.vue';
 import MetadataGeneratorPage from '../views/MetadataGeneratorPage.vue';
+import MediaSelectionPage from '../views/MediaSelectionPage.vue';
 
 const routes = [
   {
@@ -21,7 +22,12 @@ const routes = [
   },
   {
     path: '/',
-    redirect: '/dashboard/text'
+    redirect: '/media-selection'
+  },
+  {
+    path: '/media-selection',
+    name: 'mediaSelection',
+    component: MediaSelectionPage,
   },
   {
     path: '/dashboard',
@@ -94,7 +100,7 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   const isAuthenticated = localStorage.getItem('isAuthenticated');
 
-  if (to.name !== 'login' && !isAuthenticated) {
+  if (to.name !== 'login' && to.name !== 'mediaSelection' && !isAuthenticated) {
     next({ name: 'login' });
   } else {
     next();

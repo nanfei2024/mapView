@@ -9,8 +9,8 @@
       <div class="earth-horizon"></div>
 
       <div class="brand-content">
-        <h1 class="brand-title">地理多模态<br>智算系统</h1>
-        <p class="brand-subtitle">Spatial Intelligence Platform</p>
+        <h1 class="brand-title">多模态数据<br>治理平台</h1>
+        <p class="brand-subtitle">Multimodal Data Governance Platform</p>
         
         <div class="feature-list">
           <div class="feature-item">
@@ -321,7 +321,7 @@ const handleLogin = async () => {
         loading.value = false
         localStorage.setItem('isAuthenticated', 'true')
         ElMessage.success('Login Successful')
-        router.push('/')
+        router.push('/media-selection')
       }, 1000)
     }
   })
