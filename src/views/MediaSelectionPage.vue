@@ -42,9 +42,7 @@
           @click="navigateToMedia(element)"
         >
           <div class="card-inner">
-            <div class="card-icon">
-              <i :class="element.icon"></i>
-            </div>
+            <div class="card-icon" v-html="element.svgIcon"></div>
             <h3 class="card-title">{{ element.title }}</h3>
             <p class="card-description">{{ element.description }}</p>
             <div class="card-hover-effect">
@@ -83,42 +81,42 @@ const mediaConcepts = ref([
   }
 ]);
 
-// Six Media Elements (6)
+// Six Media Elements (6) with Premium SVG Icons
 const mediaElements = ref([
   {
     title: '文本',
     description: '文档处理与知识图谱',
-    icon: '📝',
+    svgIcon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>`,
     route: 'text'
   },
   {
     title: '图像',
     description: '图片识别与智能分析',
-    icon: '🖼️',
+    svgIcon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>`,
     route: 'image'
   },
   {
     title: '视频',
     description: '视频处理与内容提取',
-    icon: '🎬',
+    svgIcon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>`,
     route: 'video'
   },
   {
     title: '音频',
     description: '音频分析与语音识别',
-    icon: '🎵',
+    svgIcon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>`,
     route: 'audio'
   },
   {
     title: '图表',
     description: '数据可视化与分析',
-    icon: '📊',
+    svgIcon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path></svg>`,
     route: 'chart'
   },
   {
     title: '地图',
     description: '地理信息与空间分析',
-    icon: '🗺️',
+    svgIcon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>`,
     route: 'map'
   }
 ]);
@@ -352,14 +350,25 @@ const navigateToMedia = (element: any) => {
 }
 
 .card-icon {
-  font-size: 64px;
-  margin-bottom: 24px;
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 24px;
   transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   filter: drop-shadow(0 4px 12px rgba(102, 126, 234, 0.3));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #667eea; /* 默认图标颜色 */
+}
+
+.card-icon :deep(svg) {
+  width: 100%;
+  height: 100%;
 }
 
 .media-card:hover .card-icon {
   transform: scale(1.2) rotate(5deg);
+  color: #764ba2;
 }
 
 .card-title {

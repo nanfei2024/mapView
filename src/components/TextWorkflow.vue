@@ -1,175 +1,194 @@
 <template>
   <div class="apple-workflow-container">
-    <!-- 动态极光背景 -->
     <div class="aurora-bg"></div>
     
     <div class="content-wrapper">
-      <!-- 标题区域 -->
       <header class="header-section">
         <h1 class="main-title">文本数据治理流水线</h1>
         <p class="subtitle">全链路数字化 · 智能化重构 · 精细化治理</p>
       </header>
 
-      <!-- 核心流程图 -->
-      <div class="workflow-grid">
-        <!-- 左侧：输入与处理 -->
-        <div class="stage-section input-processing">
-          <div class="glass-card node-card start-node" data-label="Input">
-            <div class="icon-wrapper">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                <polyline points="14 2 14 8 20 8"></polyline>
-                <line x1="16" y1="13" x2="8" y2="13"></line>
-                <line x1="16" y1="17" x2="8" y2="17"></line>
-                <line x1="10" y1="9" x2="8" y2="9"></line>
-              </svg>
-            </div>
-            <span class="node-title">原始文本</span>
-          </div>
+      <!-- 主流程区域 -->
+      <div class="workflow-main">
+        
+        <!-- 区域 1: 原始库 -->
+        <div class="zone zone-original">
+          <div class="zone-content">
+            <div class="process-group">
+              <!-- 扫描文件上传 -->
+              <div class="glass-card node-card start-node">
+                <div class="icon-wrapper">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="12" y1="18" x2="12" y2="12"></line>
+                    <polyline points="9 15 12 12 15 15"></polyline>
+                  </svg>
+                </div>
+                <span class="node-title">扫描文件上传</span>
+              </div>
 
-          <!-- 动态连接线 -->
-          <div class="connection-line horizontal">
-            <div class="flowing-dot"></div>
-          </div>
+              <!-- 连接箭头 -->
+              <div class="connection-arrow">→</div>
 
-          <div class="glass-card node-card process-node" data-label="OCR">
-            <div class="icon-wrapper scanner-effect">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
-                <circle cx="12" cy="12" r="3"></circle>
-                <path d="M12 2v2"></path>
-                <path d="M12 20v2"></path>
-                <path d="M2 12h2"></path>
-                <path d="M20 12h2"></path>
-              </svg>
-            </div>
-            <span class="node-title">智能OCR识别</span>
-          </div>
-
-          <!-- OCR 分流结果 -->
-          <div class="ocr-branches">
-            <div class="branch-line-container">
-              <svg class="branch-svg" viewBox="0 0 100 80" preserveAspectRatio="none">
-                <path d="M0,40 C30,40 30,10 60,10 H100" class="branch-path"></path>
-                <path d="M0,40 H100" class="branch-path"></path>
-                <path d="M0,40 C30,40 30,70 60,70 H100" class="branch-path"></path>
-              </svg>
-            </div>
-            <div class="branch-nodes">
-              <div class="mini-node"><span class="mini-icon">M</span><span class="mini-text">Markdown</span></div>
-              <div class="mini-node"><span class="mini-icon">IMG</span><span class="mini-text">图像</span></div>
-              <div class="mini-node"><span class="mini-icon">TBL</span><span class="mini-text">表格</span></div>
+              <!-- 智能OCR -->
+              <div class="glass-card node-card process-node">
+                <div class="icon-wrapper scanner-effect">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
+                    <path d="M12 2v2"></path>
+                    <path d="M12 20v2"></path>
+                    <path d="M2 12h2"></path>
+                    <path d="M20 12h2"></path>
+                  </svg>
+                </div>
+                <span class="node-title">智能OCR识别</span>
+              </div>
             </div>
           </div>
+          <!-- 区域标签 -->
+          <div class="zone-label-bar original-bar"></div>
         </div>
 
-        <!-- 连接到中间库 -->
-        <div class="main-connector">
-          <svg class="flow-svg" viewBox="0 0 100 20" preserveAspectRatio="none">
-            <path d="M0,10 H100" class="main-path"></path>
-            <circle class="flow-particle" r="2" cx="0" cy="10">
-              <animateMotion dur="2s" repeatCount="indefinite" path="M0,10 H100" />
-            </circle>
-          </svg>
+        <!-- 流程连接 -->
+        <div class="zone-connector">
+          <div class="flow-dot"></div>
         </div>
 
-        <!-- 中间：包含中间成果库和治理 -->
-        <div class="stage-section storage-governance">
-          <!-- 中间成果库 -->
-          <div class="glass-card node-card db-card">
-            <div class="icon-wrapper db-icon">
-              <!-- Database Icon -->
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
-                <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
-                <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
-              </svg>
-              <div class="db-glow"></div>
-            </div>
-            <div class="card-content">
-              <span class="node-title large">中间成果库</span>
-              <span class="node-desc">Intermediate Result Storage</span>
-            </div>
-          </div>
-
-          <!-- 分流到治理 -->
-          <div class="governance-split">
-             <div class="split-connector-up"></div>
-             <div class="split-connector-down"></div>
-          </div>
-
-          <!-- 右侧：治理模块 -->
-          <div class="governance-modules">
-            <!-- 目录治理 -->
-            <div class="glass-card feature-card">
-              <div class="feature-icon icon-tree">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                  <rect x="3" y="3" width="7" height="7"></rect>
-                  <rect x="14" y="3" width="7" height="7"></rect>
-                  <rect x="14" y="14" width="7" height="7"></rect>
-                  <path d="M10 6.5h4"></path>
-                  <path d="M6.5 10v8a2 2 0 0 0 2 2h5.5"></path>
-                </svg>
-              </div>
-              <div class="feature-text">
-                <h3>目录体系治理</h3>
-                <p>Structure Governance</p>
-                <div class="tags">
-                  <span>拆解</span>
-                  <span>重构</span>
-                  <span>细化</span>
+        <!-- 区域 2: 中间库 -->
+        <div class="zone zone-middleware">
+          <div class="zone-content">
+            <div class="middleware-group">
+              <!-- OCR 结果 (放大的卡片) - 移到这里 -->
+              <div class="ocr-results-group">
+                <div class="result-card">
+                  <span class="mini-icon blue">M</span>
+                  <span>Markdown</span>
+                </div>
+                <div class="result-card">
+                  <span class="mini-icon green">IMG</span>
+                  <span>图像</span>
+                </div>
+                <div class="result-card">
+                  <span class="mini-icon orange">TBL</span>
+                  <span>表格</span>
                 </div>
               </div>
-            </div>
 
-            <!-- 引文治理 -->
-            <div class="glass-card feature-card">
-              <div class="feature-icon icon-link">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
-                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
-                </svg>
-              </div>
-              <div class="feature-text">
-                <h3>引文治理</h3>
-                <p>Citation Governance</p>
-                <div class="tags">
-                  <span>原文对照</span>
-                  <span>精准溯源</span>
+              <!-- 箭头 -->
+              <div class="connection-arrow">→</div>
+
+              <!-- 中间成果库 -->
+              <div class="glass-card node-card db-card">
+                <div class="icon-wrapper db-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+                    <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+                    <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+                  </svg>
                 </div>
+                <span class="node-title large">中间成果库</span>
               </div>
             </div>
           </div>
+          <div class="zone-label-bar middleware-bar"></div>
+        </div>
+
+        <!-- 流程连接 -->
+        <div class="zone-connector">
+          <div class="flow-dot"></div>
+        </div>
+
+        <!-- 区域 3: 成果库 -->
+        <div class="zone zone-result">
+          <div class="zone-content">
+            <div class="governance-grid">
+              <!-- 目录体系治理 -->
+              <div class="glass-card gov-card">
+                <div class="gov-icon green">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><path d="M10 6.5h4"></path><path d="M6.5 10v8a2 2 0 0 0 2 2h5.5"></path></svg>
+                </div>
+                <span>目录体系治理</span>
+              </div>
+
+              <!-- 图档治理 -->
+              <div class="glass-card gov-card">
+                <div class="gov-icon purple">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                </div>
+                <span>图档治理</span>
+              </div>
+
+              <!-- 引文治理 -->
+              <div class="glass-card gov-card">
+                <div class="gov-icon orange">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                </div>
+                <span>引文治理</span>
+              </div>
+
+              <!-- 表档治理 -->
+              <div class="glass-card gov-card">
+                <div class="gov-icon blue">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line><line x1="9" y1="3" x2="9" y2="21"></line></svg>
+                </div>
+                <span>表档治理</span>
+              </div>
+            </div>
+          </div>
+          <div class="zone-label-bar result-bar"></div>
+        </div>
+
+        <!-- 流程连接 -->
+        <div class="zone-connector">
+          <div class="flow-dot"></div>
+        </div>
+
+        <!-- 区域 4: 发布库 -->
+        <div class="zone zone-publish">
+          <div class="zone-content">
+            <div class="glass-card node-card publish-card">
+              <div class="icon-wrapper publish-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M21.2 15c.7 0 1.3-1.4 1.3-3s-.6-3-1.3-3S19.9 10.4 19.9 12s.6 3 1.3 3z"></path>
+                  <path d="M18.6 19.3c.5.3.8-.7 1.3-1.2.5-.5 1.5-.2 1.2-.7-.3-.5-.7-.8-1.2-1.3-.5-.5-.2-1.5.7-1.2.5.3.8.7 1.3 1.2"></path>
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <path d="M2 12h20"></path>
+                  <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                </svg>
+              </div>
+              <span class="node-title large">发布库</span>
+            </div>
+          </div>
+          <div class="zone-label-bar publish-bar"></div>
+        </div>
+
+      </div>
+
+      <!-- 底部：元数据 (大幅上移) -->
+      <div class="metadata-wrapper">
+        <!-- 垂直连接线 -->
+        <div class="meta-v-lines">
+          <div class="meta-vl" style="left: 15%"></div>
+          <div class="meta-vl" style="left: 40%"></div>
+          <div class="meta-vl" style="left: 65%"></div>
+          <div class="meta-vl" style="left: 90%"></div>
+        </div>
+
+        <div class="metadata-bar-large">
+          <div class="meta-icon-large">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line></svg>
+          </div>
+          <span class="meta-title-large">元数据库 (Metadata Traceability) — 全过程数据记录与溯源</span>
         </div>
       </div>
 
-      <!-- 底部：元数据 -->
-      <footer class="metadata-section">
-        <div class="metadata-bar">
-          <div class="meta-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
-              <line x1="4" y1="22" x2="4" y2="15"></line>
-            </svg>
-          </div>
-          <div class="meta-info">
-            <span class="meta-title">元数据全周期追踪 (Metadata Traceability)</span>
-            <span class="meta-desc">Recording every step of data transformation</span>
-          </div>
-        </div>
-        <!-- 向上连接的虚线 -->
-        <div class="meta-connections">
-          <div class="v-line" style="left: 15%"></div>
-          <div class="v-line" style="left: 45%"></div>
-          <div class="v-line" style="left: 80%"></div>
-        </div>
-      </footer>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-// Apple-style Workflow Component
+// Apple-style Workflow Component with Detailed Zones
 </script>
 
 <style scoped>
@@ -179,7 +198,7 @@
   width: 100%;
   height: 100%;
   position: relative;
-  background: #fbfbfd; /* Apple 经典背景色 */
+  background: #fbfbfd;
   color: #1d1d1f;
   font-family: "SF Pro Text", "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
   overflow: hidden;
@@ -188,14 +207,12 @@
   align-items: center;
 }
 
-/* 动感极光背景 - 明亮版 */
 .aurora-bg {
   position: absolute;
   top: -50%;
   left: -50%;
   width: 200%;
   height: 200%;
-  /* 使用柔和的蓝紫渐变，营造通透感 */
   background: radial-gradient(circle at 50% 50%, rgba(0, 122, 255, 0.05), transparent 60%),
               radial-gradient(circle at 80% 20%, rgba(88, 86, 214, 0.05), transparent 40%),
               radial-gradient(circle at 20% 80%, rgba(52, 199, 89, 0.05), transparent 50%);
@@ -212,411 +229,368 @@
 .content-wrapper {
   position: relative;
   z-index: 10;
-  width: 90%;
-  max-width: 1400px;
-  height: 90%;
+  width: 98%; /* 增加宽度占比 */
+  max-width: 1800px; /* 增加最大宽度 */
+  height: 95%;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: center; /* 垂直居中 */
 }
 
-/* 标题 */
 .header-section {
   text-align: center;
-  margin-top: 20px;
+  margin-bottom: 50px;
+  flex-shrink: 0;
 }
 
 .main-title {
-  font-size: 40px;
+  font-size: 42px; /* 放大标题 */
   font-weight: 700;
-  /* 深色渐变标题 */
   background: linear-gradient(135deg, #1d1d1f 0%, #48484a 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
   margin: 0;
-  letter-spacing: -0.5px;
 }
 
 .subtitle {
   color: #86868b;
   font-size: 18px;
   margin-top: 8px;
-  font-weight: 400;
 }
 
-/* 主布局 */
-.workflow-grid {
+/* 核心网格布局 */
+.workflow-main {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex: 1;
-  padding: 40px 0;
+  align-items: stretch; /* 拉伸高度一致 */
+  justify-content: center; /* 水平居中 */
+  gap: 20px; /* 增加间距 */
+  padding: 0 40px;
+  margin-bottom: 20px;
 }
 
-/* 玻璃拟态卡片通用样式 - 明亮版 */
-.glass-card {
-  background: rgba(255, 255, 255, 0.7); /* 高透白 */
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.8);
-  border-radius: 20px;
-  /* 柔和的阴影 */
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
-  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
-  position: relative;
-  overflow: hidden;
-}
-
-.glass-card:hover {
-  transform: translateY(-5px) scale(1.02);
-  border-color: rgba(0, 122, 255, 0.2);
-  background: rgba(255, 255, 255, 0.9);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
-}
-
-/* 左侧：输入 */
-.stage-section.input-processing {
-  display: flex;
-  align-items: center;
-}
-
-.node-card {
+/* 区域通用样式 */
+.zone {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  padding: 24px;
-  min-width: 140px;
-  gap: 16px;
+  gap: 20px;
+  padding: 30px; /* 增加内边距 */
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px dashed rgba(0, 0, 0, 0.08); /* 加深一点边框 */
+  transition: all 0.3s ease;
+  position: relative;
 }
 
-.icon-wrapper {
-  width: 56px;
-  height: 56px;
-  border-radius: 16px;
-  /* 浅灰色背景 */
-  background: #f5f5f7;
+.zone:hover {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(0, 122, 255, 0.3);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+  transform: translateY(-5px);
+}
+
+.zone-content {
+  min-height: 320px; /* 大幅增加高度 */
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #1d1d1f;
-  border: 1px solid rgba(0, 0, 0, 0.03);
+  flex: 1;
 }
 
-.icon-wrapper svg {
-  width: 28px;
-  height: 28px;
-  stroke-width: 1.5;
-}
-
-.node-title {
-  font-size: 15px;
-  font-weight: 600;
-  color: #1d1d1f;
-}
-
-/* 扫描仪动画 */
-.scanner-effect {
-  position: relative;
-  overflow: hidden;
-}
-.scanner-effect::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
+.zone-label-bar {
+  height: 10px; /* 加粗底部条 */
   width: 100%;
-  height: 2px;
-  background: #007aff;
-  box-shadow: 0 0 10px rgba(0, 122, 255, 0.5);
-  animation: scan 2s linear infinite;
-}
-
-@keyframes scan {
-  0% { top: 0; opacity: 0; }
-  10% { opacity: 1; }
-  90% { opacity: 1; }
-  100% { top: 100%; opacity: 0; }
-}
-
-/* 连接线 - 明亮版 */
-.connection-line {
-  width: 60px;
-  height: 2px;
-  background: rgba(0, 0, 0, 0.05); /* 浅灰色线条 */
+  border-radius: 5px;
   position: relative;
-  margin: 0 10px;
+  margin-top: auto;
 }
 
-.flowing-dot {
+/* 自定义底部标签文字 */
+.zone-label-bar::before {
+  content: ''; 
   position: absolute;
-  top: -2px;
-  left: 0;
-  width: 6px;
-  height: 6px;
-  background: #007aff; /* Apple Blue */
-  border-radius: 50%;
-  box-shadow: 0 0 8px rgba(0, 122, 255, 0.4);
-  animation: flowHorizontal 1.5s linear infinite;
+  top: 16px; /* 调整文字位置 */
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 16px; /* 放大标签文字 */
+  font-weight: 600;
+  color: #6e6e73;
+  white-space: nowrap;
 }
 
-@keyframes flowHorizontal {
-  0% { left: 0; opacity: 0; }
-  20% { opacity: 1; }
-  80% { opacity: 1; }
-  100% { left: 100%; opacity: 0; }
-}
+.original-bar { background: #ff3b30; box-shadow: 0 2px 10px rgba(255, 59, 48, 0.3); }
+.original-bar::before { content: '原始库'; color: #ff3b30; }
 
-/* OCR 分支 */
-.ocr-branches {
+.middleware-bar { background: #007aff; box-shadow: 0 2px 10px rgba(0, 122, 255, 0.3); }
+.middleware-bar::before { content: '中间库'; color: #007aff; }
+
+.result-bar { background: #34c759; box-shadow: 0 2px 10px rgba(52, 199, 89, 0.3); }
+.result-bar::before { content: '成果库'; color: #34c759; }
+
+.publish-bar { background: #af52de; box-shadow: 0 2px 10px rgba(175, 82, 222, 0.3); }
+.publish-bar::before { content: '发布库'; color: #af52de; }
+
+/* 区域比例微调 */
+.zone-original { flex: 0.9; }
+.zone-middleware { flex: 1.2; }
+.zone-result { flex: 1.4; }
+.zone-publish { flex: 0.8; }
+
+.process-group {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  margin-left: 20px;
+  gap: 20px;
 }
 
-.branch-line-container {
-  width: 40px;
-  height: 80px;
+.connection-arrow {
+  color: #c7c7cc;
+  font-size: 24px;
+  font-weight: 300;
+  margin: 0 5px;
 }
 
-.branch-path {
-  fill: none;
-  stroke: rgba(0, 0, 0, 0.1); /* 浅灰色虚线 */
-  stroke-width: 1.5;
-  stroke-dasharray: 4 4;
-}
-
-.branch-nodes {
+.ocr-results-group {
   display: flex;
   flex-direction: column;
+  gap: 12px;
+  height: 200px; /* 增加高度 */
   justify-content: space-between;
-  height: 140px;
-  margin-left: 10px;
 }
 
-.mini-node {
+.result-card {
   background: #fff;
-  border: 1px solid rgba(0, 0, 0, 0.05);
-  padding: 8px 16px;
-  border-radius: 20px;
+  border: 1px solid rgba(0,0,0,0.05);
+  border-radius: 12px;
+  padding: 12px 16px; /* 增加卡片内边距 */
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  color: #1d1d1f;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  gap: 12px;
+  font-size: 14px; /* 放大文字 */
+  font-weight: 600;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+  min-width: 140px; /* 增加宽度 */
 }
 
 .mini-icon {
+  width: 32px; /* 放大图标 */
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
   font-weight: 700;
-  color: #007aff;
-  font-size: 11px;
+  color: white;
 }
+.mini-icon.blue { background: #007aff; }
+.mini-icon.green { background: #34c759; }
+.mini-icon.orange { background: #ff9500; }
 
-/* 主连接器 */
-.main-connector {
-  flex: 1;
-  height: 20px;
+.middleware-group {
   display: flex;
   align-items: center;
-  padding: 0 20px;
-}
-
-.flow-svg {
-  width: 100%;
-  height: 100%;
-}
-
-.main-path {
-  stroke: rgba(0, 0, 0, 0.08);
-  stroke-width: 2;
-  stroke-dasharray: 6 6;
-  fill: none;
-}
-
-.flow-particle {
-  fill: #007aff;
-  filter: drop-shadow(0 0 2px rgba(0, 122, 255, 0.5));
-}
-
-/* 中间部分 */
-.stage-section.storage-governance {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 60px;
+  gap: 30px; /* 增加间距 */
 }
 
 .db-card {
   padding: 30px;
-  min-width: 180px;
-  /* 数据库卡片保持轻微的特别背景，但改为浅色 */
-  background: linear-gradient(135deg, #f5f5f7, #ffffff);
-  border: 1px solid rgba(0, 122, 255, 0.1);
+  background: #fff;
+  border: 1px solid rgba(0, 122, 255, 0.15);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  min-width: 160px;
 }
 
 .db-icon {
-  width: 72px;
-  height: 72px;
-  /* 蓝色渐变图标背景 */
+  width: 80px; /* 放大图标 */
+  height: 80px;
   background: linear-gradient(135deg, #007aff, #0051a8);
-  color: #fff; /* 图标保持白色 */
-  border: none;
-  box-shadow: 0 10px 20px rgba(0, 122, 255, 0.2);
+  color: white;
+  margin-bottom: 0;
 }
 
-.node-title.large {
-  font-size: 18px;
-  margin-top: 10px;
-  display: block;
+.governance-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px; /* 增加网格间距 */
+  width: 100%;
 }
 
-.node-desc {
-  font-size: 12px;
-  color: #86868b;
-}
-
-/* 治理模块 */
-.governance-modules {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.feature-card {
+.gov-card {
+  background: #fff;
+  padding: 24px; /* 增加内边距 */
   display: flex;
   align-items: center;
-  padding: 20px 24px;
-  width: 320px;
-  gap: 20px;
+  gap: 16px;
+  border-radius: 16px;
+  transition: all 0.2s;
   cursor: pointer;
-  background: #fff; /* 纯白卡片 */
+  border: 1px solid rgba(0,0,0,0.02);
 }
 
-.feature-card:hover .feature-icon {
-  transform: scale(1.1) rotate(5deg);
-  background: #f5f5f7;
+.gov-card span {
+  font-size: 15px; /* 放大文字 */
+  font-weight: 600;
 }
 
-.feature-icon {
-  width: 48px;
+.gov-card:hover { 
+  transform: translateY(-5px); 
+  box-shadow: 0 10px 25px rgba(0,0,0,0.05); 
+}
+
+.gov-icon {
+  width: 48px; /* 放大图标 */
   height: 48px;
-  background: #f5f5f7; /* 浅灰底 */
   border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s ease;
-}
-
-.icon-tree { color: #34c759; /* Apple Green */ }
-.icon-link { color: #ff9500; /* Apple Orange */ }
-
-.feature-text h3 {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 600;
-  color: #1d1d1f;
-}
-
-.feature-text p {
-  margin: 2px 0 8px 0;
-  font-size: 12px;
-  color: #86868b;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.tags {
-  display: flex;
-  gap: 8px;
-}
-
-.tags span {
-  font-size: 11px;
-  padding: 2px 8px;
   background: #f2f2f7;
-  border-radius: 10px;
-  color: #636366;
-  font-weight: 500;
+}
+
+.gov-icon svg { width: 26px; height: 26px; }
+.gov-icon.green { color: #34c759; }
+.gov-icon.purple { color: #af52de; }
+.gov-icon.orange { color: #ff9500; }
+.gov-icon.blue { color: #007aff; }
+
+.publish-card {
+  padding: 30px;
+  background: #fff;
+  border: 1px solid rgba(175, 82, 222, 0.15);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  min-width: 140px;
+}
+
+.publish-icon {
+  width: 80px; /* 放大图标 */
+  height: 80px;
+  background: linear-gradient(135deg, #af52de, #5856d6);
+  color: white;
+  margin-bottom: 0;
+}
+
+/* 连接器 */
+.zone-connector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px; /* 稍微缩短连接距，让内容更紧凑 */
+}
+
+.flow-dot {
+  width: 10px;
+  height: 10px;
+  background: #d1d1d6;
+  border-radius: 50%;
+  position: relative;
+}
+.flow-dot::after {
+  content: '';
+  position: absolute;
+  left: -25px;
+  top: 4px;
+  width: 60px;
+  height: 2px;
+  background: #e5e5ea;
+  z-index: -1;
 }
 
 /* 底部元数据 */
-.metadata-section {
+.metadata-wrapper {
+  margin-top: 50px;
   position: relative;
   width: 100%;
-  height: 60px;
-  margin-bottom: 20px;
+  padding: 0 40px;
 }
 
-.metadata-bar {
+.meta-v-lines {
+  position: absolute;
+  top: -50px;
+  left: 0;
   width: 100%;
+  height: 50px;
+  pointer-events: none;
+}
+
+.meta-vl {
+  position: absolute;
+  width: 1px;
   height: 100%;
-  background: rgba(255, 255, 255, 0.8);
-  border: 1px solid rgba(0, 0, 0, 0.05);
-  border-radius: 30px;
+  background: linear-gradient(to top, #e5e5ea, transparent);
+  border-left: 1px dashed #c7c7cc;
+}
+
+.metadata-bar-large {
+  width: 100%;
+  height: 100px; /* 增加高度 */
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.06); /* 增强阴影 */
   display: flex;
   align-items: center;
-  padding: 0 30px;
-  gap: 20px;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+  justify-content: center;
+  gap: 24px;
+  border: 1px solid rgba(0,0,0,0.02);
 }
 
-.meta-icon {
-  color: #af52de; /* Apple Purple */
+.meta-icon-large {
+  color: #ff2d55;
+  width: 48px;
+  height: 48px;
 }
 
-.meta-icon svg {
-  width: 24px;
-  height: 24px;
-}
+.meta-icon-large svg { width: 100%; height: 100%; }
 
-.meta-info {
-  display: flex;
-  flex-direction: column;
-}
-
-.meta-title {
-  font-size: 14px;
+.meta-title-large {
+  font-size: 22px; /* 放大文字 */
   font-weight: 600;
   color: #1d1d1f;
 }
 
-.meta-desc {
-  font-size: 12px;
-  color: #86868b;
+/* 通用节点样式 */
+.node-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-.meta-connections {
-  position: absolute;
-  top: -40px; /* 连接到上方 */
-  left: 0;
-  width: 100%;
-  height: 40px;
-  pointer-events: none;
+.icon-wrapper {
+  width: 64px; /* 放大图标容器 */
+  height: 64px;
+  border-radius: 16px;
+  background: #f5f5f7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #1d1d1f;
+  margin-bottom: 12px;
 }
 
-.v-line {
-  position: absolute;
-  width: 1px;
-  height: 100%;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.1), transparent);
-  border-left: 1px dashed rgba(0, 0, 0, 0.15);
+.icon-wrapper svg { width: 32px; height: 32px; }
+
+.node-title {
+  font-size: 15px; /* 放大标题 */
+  font-weight: 600;
+  color: #1d1d1f;
 }
 
-/* 响应式适配 */
-@media (max-width: 1200px) {
-  .workflow-grid {
-    flex-direction: column;
-    gap: 40px;
-  }
-  
-  .main-connector {
-    transform: rotate(90deg);
-    width: 20px;
-    height: 60px;
-  }
+.glass-card {
+  background: rgba(255,255,255,0.8);
+  backdrop-filter: blur(20px);
+  border-radius: 16px; /* 增加圆角 */
+  border: 1px solid rgba(255,255,255,0.5);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+  transition: all 0.3s;
+}
+
+.glass-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.06);
 }
 </style>

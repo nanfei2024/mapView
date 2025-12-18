@@ -20,15 +20,15 @@
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M9 12H15M9 16H15M17 21H7C5.89543 21 5 20.1046 5 19V5C5 3.89543 5.89543 3 7 3H12.5858C12.851 3 13.1054 3.10536 13.2929 3.29289L18.7071 8.70711C18.8946 8.89464 19 9.149 19 9.41421V19C19 20.1046 18.1046 21 17 21Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
-            <span class="nav-text" v-if="!sidebarCollapsed">智能OCR识别</span>
+            <span class="nav-text" v-if="!sidebarCollapsed">智能OCR</span>
         </div>
 
-          <div class="nav-item" @click="navigateToMetadataGenerator" title="元数据生成">
+          <div class="nav-item" @click="navigateToMetadataGenerator" title="元数据管理">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2"/>
               <path d="M12 8V16M8 12H16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
             </svg>
-            <span class="nav-text" v-if="!sidebarCollapsed">元数据生成</span>
+            <span class="nav-text" v-if="!sidebarCollapsed">元数据管理</span>
           </div>
 
 
@@ -75,26 +75,48 @@
 <!--            <span class="nav-text" v-if="!sidebarCollapsed">底图数据</span>-->
 <!--        </div>-->
 
-          <div class="nav-item" @click="navigateToBooks" title="目录体系治理">
+          <div class="nav-item" @click="navigateToBooks" title="目录重构">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M12 6.5C10.5 4.5 8 3 5 3V19C8 19 10.5 20.5 12 22.5C13.5 20.5 16 19 19 19V3C16 3 13.5 4.5 12 6.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
-            <span class="nav-text" v-if="!sidebarCollapsed">目录体系治理</span>
+            <span class="nav-text" v-if="!sidebarCollapsed">目录重构</span>
         </div>
 
-          <div class="nav-item" @click="navigateToFileList" title="用户管理中心">
+          <div class="nav-item" @click="navigateToImageGovernance" title="图档治理">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M21 19V5C21 3.9 20.1 3 19 3H5C3.9 3 3 3.9 3 5V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19ZM8.5 13.5L11 16.51L14.5 12L19 18H5L8.5 13.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span class="nav-text" v-if="!sidebarCollapsed">图档治理</span>
+          </div>
+
+          <div class="nav-item" @click="navigateToTableGovernance" title="表档治理">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M3 3H21V21H3V3ZM5 5V9H9V5H5ZM11 5V9H15V5H11ZM17 5V9H21V5H17ZM5 11V15H9V11H5ZM11 11V15H15V11H11ZM17 11V15H21V11H17ZM5 17V21H9V17H5ZM11 17V21H15V17H11ZM17 17V21H21V17H17Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span class="nav-text" v-if="!sidebarCollapsed">表档治理</span>
+          </div>
+
+          <div class="nav-item" @click="navigateToCitationGovernance" title="引文治理">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span class="nav-text" v-if="!sidebarCollapsed">引文治理</span>
+          </div>
+
+          <div class="nav-item" @click="navigateToFileList" title="用户中心">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M3 7C3 5.89543 3.89543 5 5 5H9L11 7H19C20.1046 7 21 7.89543 21 9V17C21 18.1046 20.1046 19 19 19H5C3.89543 19 3 18.1046 3 17V7Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
-            <span class="nav-text" v-if="!sidebarCollapsed">用户管理中心</span>
+            <span class="nav-text" v-if="!sidebarCollapsed">用户中心</span>
         </div>
 
-          <div class="nav-item" @click="togglePlateManager" title="文本地图联动">
+          <div class="nav-item" @click="togglePlateManager" title="图文联动">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M3 7V17C3 18.1046 3.89543 19 5 19H19C20.1046 19 21 18.1046 21 17V7C21 5.89543 20.1046 5 19 5H5C3.89543 5 3 5.89543 3 7Z" stroke="currentColor" stroke-width="2"/>
               <path d="M3 10H21M8 5V19" stroke="currentColor" stroke-width="2"/>
             </svg>
-            <span class="nav-text" v-if="!sidebarCollapsed">文本地图联动</span>
+            <span class="nav-text" v-if="!sidebarCollapsed">图文联动</span>
           </div>
 
 
@@ -400,6 +422,21 @@ const navigateToDocumentDigitalization = () => {
 // 导航到元数据生成页面
 const navigateToMetadataGenerator = () => {
   router.push('/metadata-generator');
+};
+
+// 导航到图档治理
+const navigateToImageGovernance = () => {
+  ElMessage.info('图档治理功能开发中');
+};
+
+// 导航到表档治理
+const navigateToTableGovernance = () => {
+  ElMessage.info('表档治理功能开发中');
+};
+
+// 导航到引文治理
+const navigateToCitationGovernance = () => {
+  ElMessage.info('引文治理功能开发中');
 };
 
 // 导航到文件列表页面（包含文件、图库、表库三个标签）
