@@ -24,6 +24,7 @@
     "marked": "^15.0.12",
     "node-fetch": "^3.3.2",
     "pdfjs-dist": "^4.10.38",
+    "pinia": "^3.0.4",
     "vue": "^3.5.12",
     "vue-pdf": "^4.3.0",
     "vue-router": "^4.4.5"

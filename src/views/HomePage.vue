@@ -424,9 +424,9 @@ const navigateToMetadataGenerator = () => {
   router.push('/metadata-generator');
 };
 
-// 导航到图档治理
+// 导航到图档治理（图目录页面）
 const navigateToImageGovernance = () => {
-  ElMessage.info('图档治理功能开发中');
+  router.push('/figure-catalog');
 };
 
 // 导航到表档治理

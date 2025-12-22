@@ -8,14 +8,23 @@
           <h4>引文目录</h4>
           <span class="citation-count">{{ citations.length }} 条</span>
         </div>
-        <button 
-          v-if="selectedCitation" 
-          @click="clearSelection" 
-          class="clear-selection-btn"
-          title="清除选择"
-        >
-          ✕
-        </button>
+        <div class="header-actions">
+          <button 
+            class="import-citation-btn"
+            @click="showImportDialog = true"
+            title="从文件导入引文列表（支持 Markdown / 文本）"
+          >
+            📥 导入
+          </button>
+          <button 
+            v-if="selectedCitation" 
+            @click="clearSelection" 
+            class="clear-selection-btn"
+            title="清除选择"
+          >
+            ✕
+          </button>
+        </div>
       </div>
       
       <div v-if="loading" class="loading-indicator">
@@ -224,8 +233,8 @@
               accept=".pdf,.txt,.doc,.docx"
               class="file-input"
             />
-            <div class="upload-prompt-area" @click="$refs.fileInput?.click()">
-              <p class="upload-icon">�</p>
+            <div class="upload-prompt-area" @click="triggerLiteratureFileSelect">
+              <p class="upload-icon">📤</p>
               <p>点击选择文件或拖拽文件到此处</p>
               <p class="file-types">支持格式: PDF, TXT, DOC, DOCX</p>
             </div>
@@ -243,6 +252,65 @@
             class="confirm-btn"
           >
             {{ uploading ? '上传中...' : '确认上传' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 引文列表导入对话框 -->
+    <div v-if="showImportDialog" class="upload-dialog-overlay" @click="showImportDialog = false">
+      <div class="upload-dialog" @click.stop>
+        <div class="dialog-header">
+          <h4>导入引文目录</h4>
+          <button @click="showImportDialog = false" class="close-btn">×</button>
+        </div>
+        <div class="dialog-body">
+          <p class="upload-hint">
+            选择一份包含引文条目的文件，支持 
+            <strong>Markdown(.md)</strong>、<strong>文本(.txt)</strong> 或 <strong>CSV(.csv)</strong>。<br/>
+            - 若是完整章节的 Markdown，请直接上传原文件；<br/>
+            - 若是仅包含引文列表，可按一行一条或 CSV 形式书写。
+          </p>
+          <div class="import-scope">
+            <label>
+              <input type="radio" value="chapter" v-model="importScope" />
+              作用于当前章节（随章节切换重载）
+            </label>
+            <label>
+              <input type="radio" value="book" v-model="importScope" />
+              作用于全书（切换章节时保留目录，仅重新解析正文引用）
+            </label>
+          </div>
+          <div class="upload-area">
+            <input 
+              type="file" 
+              ref="importFileInput" 
+              @change="handleImportFileSelect"
+              accept=".md,.markdown,.txt,.csv"
+              class="file-input"
+            />
+            <div class="upload-prompt-area" @click="triggerImportFileSelect">
+              <p class="upload-icon">📥</p>
+              <p>点击选择引文文件或拖拽文件到此处</p>
+              <p class="file-types">支持格式: .md, .markdown, .txt, .csv</p>
+            </div>
+          </div>
+          <div v-if="importFile" class="selected-file">
+            <span class="file-name">{{ importFile.name }}</span>
+            <span class="file-size">{{ formatFileSize(importFile.size) }}</span>
+          </div>
+          <div v-if="importError" class="error-message">
+            <p>{{ importError }}</p>
+          </div>
+        </div>
+        <div class="dialog-footer">
+          <button @click="showImportDialog = false" class="cancel-btn">取消</button>
+          <button 
+            @click="parseImportFile" 
+            :disabled="!importFile"
+            class="confirm-btn"
+          >
+            解析并替换当前引文列表
           </button>
         </div>
       </div>
@@ -304,6 +372,14 @@ const selectedFile = ref<File | null>(null);
 const uploading = ref(false);
 const literatureText = ref('');  // 文本文件内容
 const fileInput = ref<HTMLInputElement | null>(null);
+
+// 引文导入相关状态
+const showImportDialog = ref(false);
+const importFile = ref<File | null>(null);
+const importFileInput = ref<HTMLInputElement | null>(null);
+const importError = ref('');
+const importScope = ref<'chapter' | 'book'>('chapter');
+const importedFromFile = ref(false); // 是否有全书范围的导入
 
 // 加载引文
 const loadCitations = async () => {
@@ -495,6 +571,20 @@ const extractCitations = (content: string): Citation[] => {
             console.log(`跳过无效灵活格式作者: ${author}`);
           }
         }
+      }
+
+      // 格式6：无编号的自由格式行（兜底逻辑）
+      // 场景：整本书的“参考文献”列表没有编号，每行一条。此时也要生成条目。
+      if (!matched) {
+        citationIndex++;
+        citationList.push({
+          id: `citation-free-${citationIndex}`,
+          number: citationIndex,
+          text: line,
+          rawText: line
+        } as any);
+        matched = true;
+        console.log(`提取自由格式引文 (${citationIndex}): ${line.substring(0, 30)}...`);
       }
     }
   }
@@ -688,12 +778,28 @@ const scrollToReference = (index: number) => {
 // 监听 fileId 变化，自动加载引文
 watch(() => props.fileId, (newFileId) => {
   if (newFileId) {
-    loadCitations();
+    if (importScope.value === 'book' && importedFromFile.value) {
+      // 仅更新正文内容，用于引用定位，不覆盖全书导入的引文目录
+      fetchMarkdownContentOnly(newFileId);
+    } else {
+      loadCitations();
+    }
   } else {
     citations.value = [];
     selectedCitation.value = null;
   }
 }, { immediate: true });
+
+// 仅获取正文内容（不替换引文列表）
+const fetchMarkdownContentOnly = async (fileId: number) => {
+  try {
+    const url = `http://localhost:8080/api/files/markdown/${fileId}/content`;
+    const response = await axios.get(url);
+    markdownContent.value = response.data?.content || '';
+  } catch (err: any) {
+    console.error('加载章节内容失败:', err);
+  }
+};
 
 // 加载文本文件内容
 const loadLiteratureText = async (url: string) => {
@@ -711,6 +817,13 @@ const handleFileSelect = (event: Event) => {
   const target = event.target as HTMLInputElement;
   if (target.files && target.files.length > 0) {
     selectedFile.value = target.files[0];
+  }
+};
+
+// 触发文献文件选择
+const triggerLiteratureFileSelect = () => {
+  if (fileInput.value) {
+    fileInput.value.click();
   }
 };
 
@@ -779,6 +892,102 @@ const formatFileSize = (bytes: number): string => {
   if (bytes < 1024) return bytes + ' B';
   if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
   return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+};
+
+// 处理导入文件选择
+const handleImportFileSelect = (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  if (target.files && target.files.length > 0) {
+    importFile.value = target.files[0];
+    importError.value = '';
+  }
+};
+
+// 触发导入文件选择
+const triggerImportFileSelect = () => {
+  if (importFileInput.value) {
+    importFileInput.value.click();
+  }
+};
+
+// 将导入文件内容解析为 Citation 列表
+const importCitationsFromContent = (content: string): Citation[] => {
+  if (!content || !content.trim()) return [];
+
+  // 如果文本中本身包含“参考文献/REFERENCES”等标题，直接按完整 markdown 处理
+  if (/参考文献|REFERENCES?/i.test(content)) {
+    return extractCitations(content);
+  }
+
+  // 否则构造一个虚拟的“参考文献章节”包装，再复用现有 extractCitations 逻辑
+  const fakeMarkdown = `## 参考文献\n` + content;
+  let list = extractCitations(fakeMarkdown);
+
+  // 如果仍未解析出任何条目，尝试按“每行一条”的简单规则兜底
+  if (!list.length) {
+    const lines = content.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    let index = 0;
+    list = lines.map((line, i) => {
+      // 支持前缀 [n] 或 n. 之类，尽量保持原编号，否则用行号顺序
+      const numberedMatch = line.match(/^[\[\(]?(\d+)[\]\)\.\、]?\s*(.+)$/);
+      if (numberedMatch) {
+        const num = parseInt(numberedMatch[1]);
+        const text = numberedMatch[2];
+        return {
+          id: `imp-${num}`,
+          number: num,
+          text,
+          rawText: line
+        } as Citation;
+      }
+      index++;
+      return {
+        id: `imp-line-${i + 1}`,
+        number: index,
+        text: line,
+        rawText: line
+      } as Citation;
+    });
+  }
+
+  return list;
+};
+
+// 解析导入文件
+const parseImportFile = () => {
+  if (!importFile.value) return;
+
+  importError.value = '';
+  const reader = new FileReader();
+
+  reader.onload = () => {
+    try {
+      const text = String(reader.result || '');
+      const imported = importCitationsFromContent(text);
+
+      if (!imported.length) {
+        importError.value = '未能从文件中解析出任何引文，请检查格式。';
+        return;
+      }
+
+      citations.value = imported;
+      selectedCitation.value = null;
+      citationReferences.value = [];
+      showImportDialog.value = false;
+      importFile.value = null;
+      importedFromFile.value = importScope.value === 'book';
+      alert(`成功导入 ${imported.length} 条引文。`);
+    } catch (e: any) {
+      console.error('解析引文文件失败:', e);
+      importError.value = e?.message || '解析引文文件时发生错误';
+    }
+  };
+
+  reader.onerror = () => {
+    importError.value = '读取文件失败，请重试。';
+  };
+
+  reader.readAsText(importFile.value, 'utf-8');
 };
 
 // 设置引用类型分析
@@ -888,6 +1097,12 @@ defineExpose({
   gap: 12px;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .catalog-header h4 {
   margin: 0;
   font-size: 16px;
@@ -922,6 +1137,25 @@ defineExpose({
 .clear-selection-btn:hover {
   background: rgba(255, 255, 255, 0.3);
   transform: rotate(90deg);
+}
+
+.import-citation-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 13px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s ease;
+}
+
+.import-citation-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
 }
 
 .citation-list {

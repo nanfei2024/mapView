@@ -3,6 +3,8 @@ import FileDetails from '../components/FileDetails.vue';
 import FileEdit from '../components/FileEdit.vue';
 import HomePage from '../views/HomePage.vue';
 import BookListPage from '../views/BookListPage.vue';
+import BookCatalogPage from '../views/BookCatalogPage.vue';
+import FigureCatalogPage from '../views/FigureCatalogPage.vue';
 import FileListPage from '../views/FileListPage.vue';
 import DocumentDigitalizationPage from '../views/DocumentDigitalizationPage.vue';
 import DocumentPreviewPage from '../views/DocumentPreviewPage.vue';
@@ -63,6 +65,16 @@ const routes = [
     path: '/books',
     name: 'books',
     component: BookListPage,
+  },
+  {
+    path: '/book-catalog/:bookId?',
+    name: 'bookCatalog',
+    component: BookCatalogPage,
+  },
+  {
+    path: '/figure-catalog/:bookId?',
+    name: 'figureCatalog',
+    component: FigureCatalogPage,
   },
   {
     path: '/document-digitalization',

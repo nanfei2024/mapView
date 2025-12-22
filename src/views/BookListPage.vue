@@ -185,11 +185,13 @@
     return defaultCovers[bookId] || '/images/default-book-cover.jpg';
   };
   
-  // 打开书籍详情
+  // 打开书籍详情（新：跳转到目录重构页面）
   const openBookDetails = (book: Book) => {
-    // book.id 已经是 string 类型，直接使用
+    // 仍然保留选中状态，后续如果还需要弹窗模式可以复用
     selectedBook.value = book;
-    showBookModal.value = true;
+    // 关闭旧的弹窗方式，改为路由跳转到书籍目录重构页面
+    showBookModal.value = false;
+    router.push(`/book-catalog/${book.id}`);
   };
   
   // 关闭书籍详情
