@@ -85,8 +85,8 @@
     </div>
   </template>
   
-  <script setup lang="ts">
-  import { ref, onMounted } from 'vue';
+<script setup lang="ts">
+import { ref, onMounted } from 'vue';
   import { useRouter } from 'vue-router';
   import { ElMessage } from 'element-plus';
   import BookViewer from '../components/BookViewer.vue';
@@ -114,6 +114,9 @@
   }
   
   const router = useRouter();
+const props = defineProps<{
+  structuredMode?: boolean; // 结构化展示模式：点击书籍直接在当前页打开 BookViewer 全景
+}>();
   
   // 加载状态
   const loading = ref(false);
@@ -185,14 +188,20 @@
     return defaultCovers[bookId] || '/images/default-book-cover.jpg';
   };
   
-  // 打开书籍详情（新：跳转到目录重构页面）
-  const openBookDetails = (book: Book) => {
-    // 仍然保留选中状态，后续如果还需要弹窗模式可以复用
-    selectedBook.value = book;
-    // 关闭旧的弹窗方式，改为路由跳转到书籍目录重构页面
-    showBookModal.value = false;
-    router.push(`/book-catalog/${book.id}`);
-  };
+// 打开书籍详情
+const openBookDetails = (book: Book) => {
+  selectedBook.value = book;
+
+  // 结构化展示：在当前页直接以全屏弹窗方式打开 BookViewer
+  if (props.structuredMode) {
+    showBookModal.value = true;
+    return;
+  }
+
+  // 默认：跳转到目录重构页面
+  showBookModal.value = false;
+  router.push(`/book-catalog/${book.id}`);
+};
   
   // 关闭书籍详情
   const closeBookModal = () => {

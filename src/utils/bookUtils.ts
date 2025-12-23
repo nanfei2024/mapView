@@ -36,12 +36,30 @@ export const compareProperties = (propA: string, propB: string): number => {
   return partsA.length - partsB.length;
 };
 
-// 从图片标题中提取图片编号（例如 “图1.2 a ...” -> "1.2"）
+// 从图片标题中提取图片编号（例如 "图1.2 a ..." -> "1.2"）
 export const extractFigureNumber = (title: string): string | null => {
   const patterns = [
     /图\s*(\d+(?:\.\d+)*)/,
     /如图\s*(\d+(?:\.\d+)*)/,
     /图\s*(\d+(?:\.\d+)*)\s*[:：]/,
+  ];
+
+  for (const pattern of patterns) {
+    const match = title.match(pattern);
+    if (match) {
+      return match[1];
+    }
+  }
+
+  return null;
+};
+
+// 从表格标题中提取表格编号（例如 "表1.2 a ..." -> "1.2"）
+export const extractTableNumber = (title: string): string | null => {
+  const patterns = [
+    /表\s*(\d+(?:\.\d+)*)/,
+    /如表\s*(\d+(?:\.\d+)*)/,
+    /表\s*(\d+(?:\.\d+)*)\s*[:：]/,
   ];
 
   for (const pattern of patterns) {

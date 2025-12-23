@@ -8,6 +8,19 @@
         </p>
       </div>
       <div class="actions">
+        <select
+          v-model.number="selectedBookId"
+          class="book-select"
+          @change="handleBookChange"
+        >
+          <option
+            v-for="book in books"
+            :key="book.id"
+            :value="book.id"
+          >
+            {{ book.title || book.name }}
+          </option>
+        </select>
         <button class="btn secondary" @click="goBack">返回</button>
         <button class="btn primary" @click="reload" :disabled="bookStore.loading">
           {{ bookStore.loading ? '正在刷新...' : '刷新目录' }}
@@ -205,6 +218,7 @@ import { onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useBookStore } from '../stores/bookStore';
 import axios from 'axios';
+import { bookApi, type Book } from '../api/bookApi';
 
 const route = useRoute();
 const router = useRouter();
@@ -223,26 +237,60 @@ const detailedTocLoading = ref(false);
 const detailedTocError = ref('');
 const detailedTocItems = ref<any[]>([]);
 
-// 从路由参数解析 bookId，默认 1
+// 书籍列表与选中
+const books = ref<Book[]>([]);
+const selectedBookId = ref<number | undefined>(undefined);
+
+// 从路由/下拉/已选书中解析 bookId，默认 1
 const resolveBookId = () => {
   const raw = route.params.bookId as string | undefined;
-  if (!raw) return 1;
-  const n = Number(raw);
-  return Number.isNaN(n) ? 1 : n;
+  if (selectedBookId.value) return selectedBookId.value;
+  if (raw && !Number.isNaN(Number(raw))) return Number(raw);
+  return Number(bookStore.selectedBook?.id || books.value[0]?.id || 1);
 };
 
-const loadData = async () => {
-  const bookId = resolveBookId();
-  await bookStore.fetchAllMarkdownFiles(bookId);
-
-  // 默认展开第一章
-  if (bookStore.selectedBook && bookStore.selectedBook.chapters.length > 0) {
-    expandedChapters.value[0] = true;
+// 加载书籍列表
+const loadBooks = async () => {
+  const res = await bookApi.getAllBooks();
+  books.value = res.books || [];
+  if (books.value.length > 0 && !selectedBookId.value) {
+    const raw = route.params.bookId as string | undefined;
+    selectedBookId.value =
+      raw && !Number.isNaN(Number(raw)) ? Number(raw) : books.value[0].id;
   }
 };
 
-onMounted(() => {
-  loadData();
+// 保证书籍和章节已选中，并预取首节内容
+const ensureBookAndSelection = async () => {
+  const bookId = resolveBookId();
+  if (!bookStore.selectedBook || Number(bookStore.selectedBook.id) !== bookId) {
+    await bookStore.fetchAllMarkdownFiles(bookId);
+  }
+  if (
+    bookStore.selectedBook &&
+    bookStore.selectedBook.chapters.length > 0 &&
+    (bookStore.selectedChapterIndex < 0 || bookStore.selectedSectionIndex < 0)
+  ) {
+    bookStore.selectSection(0, 0);
+    const section = bookStore.currentSection;
+    if (section?.fileId) {
+      await bookStore.fetchSectionContent(section.fileId);
+    }
+  }
+  if (bookStore.selectedBook && bookStore.selectedBook.chapters.length > 0) {
+    expandedChapters.value = { 0: true };
+  } else {
+    expandedChapters.value = {};
+  }
+};
+
+const loadData = async () => {
+  await ensureBookAndSelection();
+};
+
+onMounted(async () => {
+  await loadBooks();
+  await loadData();
 });
 
 const goBack = () => {
@@ -251,6 +299,17 @@ const goBack = () => {
 
 const reload = () => {
   loadData();
+};
+
+// 切换书籍
+const handleBookChange = async () => {
+  if (!selectedBookId.value) return;
+  // 清空当前状态以避免旧数据闪烁
+  bookStore.clearSelection();
+  expandedChapters.value = {};
+  showSummaryPanel.value = false;
+  detailedTocItems.value = [];
+  await ensureBookAndSelection();
 };
 
 const toggleChapter = (index: number) => {
@@ -437,6 +496,23 @@ const openDetailedToc = async () => {
 .actions {
   display: flex;
   gap: 8px;
+}
+
+.book-select {
+  padding: 6px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #374151;
+  background: #ffffff;
+  min-width: 200px;
+  cursor: pointer;
+}
+
+.book-select:focus {
+  outline: none;
+  border-color: #00a3ff;
+  box-shadow: 0 0 0 2px rgba(0, 163, 255, 0.15);
 }
 
 .btn {

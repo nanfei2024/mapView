@@ -5,6 +5,8 @@ import HomePage from '../views/HomePage.vue';
 import BookListPage from '../views/BookListPage.vue';
 import BookCatalogPage from '../views/BookCatalogPage.vue';
 import FigureCatalogPage from '../views/FigureCatalogPage.vue';
+import TableCatalogPage from '../views/TableCatalogPage.vue';
+import CitationCatalogPage from '../views/CitationCatalogPage.vue';
 import FileListPage from '../views/FileListPage.vue';
 import DocumentDigitalizationPage from '../views/DocumentDigitalizationPage.vue';
 import DocumentPreviewPage from '../views/DocumentPreviewPage.vue';
@@ -24,7 +26,7 @@ const routes = [
   },
   {
     path: '/',
-    redirect: '/media-selection'
+    redirect: '/media-selection',
   },
   {
     path: '/media-selection',
@@ -43,7 +45,7 @@ const routes = [
       { path: 'audio', name: 'audio-module', component: ModulePlaceholder },
       { path: 'chart', name: 'chart-module', component: ModulePlaceholder },
       { path: 'map', name: 'map-module', component: ModulePlaceholder },
-    ]
+    ],
   },
   {
     path: '/files/details/:id',
@@ -67,6 +69,12 @@ const routes = [
     component: BookListPage,
   },
   {
+    path: '/structured-display',
+    name: 'structuredDisplay',
+    component: BookListPage,
+    props: { structuredMode: true },
+  },
+  {
     path: '/book-catalog/:bookId?',
     name: 'bookCatalog',
     component: BookCatalogPage,
@@ -75,6 +83,16 @@ const routes = [
     path: '/figure-catalog/:bookId?',
     name: 'figureCatalog',
     component: FigureCatalogPage,
+  },
+  {
+    path: '/table-catalog/:bookId?',
+    name: 'tableCatalog',
+    component: TableCatalogPage,
+  },
+  {
+    path: '/citation-catalog/:bookId?',
+    name: 'citationCatalog',
+    component: CitationCatalogPage,
   },
   {
     path: '/document-digitalization',

@@ -75,11 +75,11 @@
 <!--            <span class="nav-text" v-if="!sidebarCollapsed">底图数据</span>-->
 <!--        </div>-->
 
-          <div class="nav-item" @click="navigateToBooks" title="目录重构">
+          <div class="nav-item" @click="navigateToBooks" title="目录体系治理">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M12 6.5C10.5 4.5 8 3 5 3V19C8 19 10.5 20.5 12 22.5C13.5 20.5 16 19 19 19V3C16 3 13.5 4.5 12 6.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
-            <span class="nav-text" v-if="!sidebarCollapsed">目录重构</span>
+            <span class="nav-text" v-if="!sidebarCollapsed">目录体系治理</span>
         </div>
 
           <div class="nav-item" @click="navigateToImageGovernance" title="图档治理">
@@ -102,6 +102,15 @@
               <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
             <span class="nav-text" v-if="!sidebarCollapsed">引文治理</span>
+          </div>
+
+          <div class="nav-item" @click="navigateToStructuredDisplay" title="结构化展示">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M4 4H10V10H4V4Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M14 4H20V10H14V4Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M4 14H20V20H4V14Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span class="nav-text" v-if="!sidebarCollapsed">结构化展示</span>
           </div>
 
           <div class="nav-item" @click="navigateToFileList" title="用户中心">
@@ -431,12 +440,17 @@ const navigateToImageGovernance = () => {
 
 // 导航到表档治理
 const navigateToTableGovernance = () => {
-  ElMessage.info('表档治理功能开发中');
+  router.push('/table-catalog');
 };
 
 // 导航到引文治理
 const navigateToCitationGovernance = () => {
-  ElMessage.info('引文治理功能开发中');
+  router.push('/citation-catalog');
+};
+
+// 导航到结构化展示（地质科学书籍馆 -> BookViewer 全景）
+const navigateToStructuredDisplay = () => {
+  router.push('/structured-display');
 };
 
 // 导航到文件列表页面（包含文件、图库、表库三个标签）
