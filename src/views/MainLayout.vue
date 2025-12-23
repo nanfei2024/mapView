@@ -2,6 +2,12 @@
   <div class="main-layout">
     <!-- 顶部导航栏 -->
     <header class="top-nav">
+      <div class="nav-brand">
+        <div class="logo-ring">
+          <div class="ring-inner"></div>
+        </div>
+        <span class="brand-text">GEODATA</span>
+      </div>
       
       <nav class="nav-items">
         <div 
@@ -100,7 +106,7 @@ onUnmounted(() => {
   border-bottom: 1px solid rgba(16, 185, 129, 0.2);
   display: flex;
   align-items: center;
-  padding: 0 40px;
+  padding: 0; /* Removed padding to align with sidebar */
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
   z-index: 100;
   backdrop-filter: blur(10px);
@@ -109,8 +115,11 @@ onUnmounted(() => {
 .nav-brand {
   display: flex;
   align-items: center;
-  width: 320px;
-  gap: 16px;
+  width: 220px; /* Aligned with Sidebar width */
+  padding-left: 20px;
+  box-sizing: border-box;
+  gap: 12px;
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .logo-ring {
@@ -138,6 +147,7 @@ onUnmounted(() => {
   letter-spacing: 1.5px;
   background: linear-gradient(90deg, #fff, #10b981);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
   text-transform: uppercase;
 }
@@ -145,8 +155,9 @@ onUnmounted(() => {
 .nav-items {
   flex: 1;
   display: flex;
-  justify-content: center;
-  gap: 48px;
+  justify-content: flex-start; /* Align tabs to the left next to brand */
+  padding-left: 0;
+  gap: 0; /* Align items flush next to each other? maybe keep gap but removal of padding is key */
   height: 100%;
 }
 

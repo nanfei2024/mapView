@@ -3,8 +3,15 @@
     <div class="aurora-bg"></div>
     
     <div class="content-wrapper">
+      <!-- Top Navigation Tabs -->
+      <div class="top-nav-tabs">
+        <div class="nav-tab active">书籍</div>
+        <div class="nav-tab" @click="handleTabClick('论文')">论文</div>
+        <div class="nav-tab" @click="handleTabClick('报告')">报告</div>
+      </div>
+
       <header class="header-section">
-        <h1 class="main-title">文本数据治理流水线</h1>
+        <h1 class="main-title">书籍治理流程</h1>
         <p class="subtitle">全链路数字化 · 智能化重构 · 精细化治理</p>
       </header>
 
@@ -52,7 +59,7 @@
 
         <!-- 流程连接 -->
         <div class="zone-connector">
-          <div class="flow-dot"></div>
+          <div class="zone-arrow">➔</div>
         </div>
 
         <!-- 区域 2: 中间库 -->
@@ -96,7 +103,7 @@
 
         <!-- 流程连接 -->
         <div class="zone-connector">
-          <div class="flow-dot"></div>
+          <div class="zone-arrow">➔</div>
         </div>
 
         <!-- 区域 3: 成果库 -->
@@ -141,7 +148,7 @@
 
         <!-- 流程连接 -->
         <div class="zone-connector">
-          <div class="flow-dot"></div>
+          <div class="zone-arrow">➔</div>
         </div>
 
         <!-- 区域 4: 发布库 -->
@@ -188,7 +195,12 @@
 </template>
 
 <script setup lang="ts">
-// Apple-style Workflow Component with Detailed Zones
+import { ElMessage } from 'element-plus';
+
+// 处理标签点击
+const handleTabClick = (name: string) => {
+  ElMessage.info(`${name}治理功能正在开发中...`);
+};
 </script>
 
 <style scoped>
@@ -236,6 +248,45 @@
   flex-direction: column;
   justify-content: center; /* 垂直居中 */
 }
+
+/* Top Navigation Tabs Styling */
+.top-nav-tabs {
+  position: absolute;
+  top: 0;
+  left: 40px;
+  display: flex;
+  gap: 12px;
+  z-index: 100;
+}
+
+.nav-tab {
+  padding: 10px 24px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  font-size: 15px;
+  font-weight: 600;
+  color: #1d1d1f;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+}
+
+.nav-tab:hover {
+  background: rgba(255, 255, 255, 0.8);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
+}
+
+.nav-tab.active {
+  background: #007aff;
+  color: white;
+  border-color: #007aff;
+  box-shadow: 0 8px 16px rgba(0, 122, 255, 0.3);
+}
+
 
 .header-section {
   text-align: center;
@@ -312,8 +363,8 @@
   top: 16px; /* 调整文字位置 */
   left: 50%;
   transform: translateX(-50%);
-  font-size: 16px; /* 放大标签文字 */
-  font-weight: 600;
+  font-size: 20px; /* 16px -> 20px */
+  font-weight: 700;
   color: #6e6e73;
   white-space: nowrap;
 }
@@ -343,10 +394,11 @@
 }
 
 .connection-arrow {
-  color: #c7c7cc;
-  font-size: 24px;
-  font-weight: 300;
-  margin: 0 5px;
+  color: #86868b;
+  font-size: 32px; /* Increased from 24px */
+  font-weight: 700; /* Bold */
+  margin: 0 10px;
+  transform: scaleX(1.2); /* Make it stretch a bit */
 }
 
 .ocr-results-group {
@@ -361,14 +413,14 @@
   background: #fff;
   border: 1px solid rgba(0,0,0,0.05);
   border-radius: 12px;
-  padding: 12px 16px; /* 增加卡片内边距 */
+  padding: 16px 20px; /* Increased padding */
   display: flex;
   align-items: center;
   gap: 12px;
-  font-size: 14px; /* 放大文字 */
+  font-size: 18px; /* 14px -> 18px */
   font-weight: 600;
   box-shadow: 0 4px 10px rgba(0,0,0,0.03);
-  min-width: 140px; /* 增加宽度 */
+  min-width: 160px; /* Increased width */
 }
 
 .mini-icon {
@@ -431,7 +483,7 @@
 }
 
 .gov-card span {
-  font-size: 15px; /* 放大文字 */
+  font-size: 18px; /* 15px -> 18px */
   font-weight: 600;
 }
 
@@ -483,22 +535,11 @@
   width: 30px; /* 稍微缩短连接距，让内容更紧凑 */
 }
 
-.flow-dot {
-  width: 10px;
-  height: 10px;
-  background: #d1d1d6;
-  border-radius: 50%;
-  position: relative;
-}
-.flow-dot::after {
-  content: '';
-  position: absolute;
-  left: -25px;
-  top: 4px;
-  width: 60px;
-  height: 2px;
-  background: #e5e5ea;
-  z-index: -1;
+.zone-arrow {
+  font-size: 28px;
+  color: #86868b;
+  font-weight: bold;
+  opacity: 0.6;
 }
 
 /* 底部元数据 */
@@ -548,8 +589,8 @@
 .meta-icon-large svg { width: 100%; height: 100%; }
 
 .meta-title-large {
-  font-size: 22px; /* 放大文字 */
-  font-weight: 600;
+  font-size: 26px; /* 22px -> 26px */
+  font-weight: 700;
   color: #1d1d1f;
 }
 
@@ -575,7 +616,7 @@
 .icon-wrapper svg { width: 32px; height: 32px; }
 
 .node-title {
-  font-size: 15px; /* 放大标题 */
+  font-size: 18px; /* 15px -> 18px */
   font-weight: 600;
   color: #1d1d1f;
 }

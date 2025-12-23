@@ -1,13 +1,19 @@
 <template>
-  <div class="split-layout">
-    <!-- Left Panel: Dark Brand/Vibe -->
-    <div class="left-panel">
+  <div class="full-screen-layout">
+    <!-- Main Background Panel (Formerly Left Panel) -->
+    <div class="main-panel">
       <!-- Starry Background Canvas -->
       <canvas ref="starCanvas" class="star-canvas"></canvas>
       
       <!-- Atmospheric Earth Glow (CSS) -->
       <div class="earth-horizon"></div>
 
+      <!-- Globe Effect -->
+      <div class="globe-container">
+        <canvas ref="globeCanvas"></canvas>
+      </div>
+
+      <!-- Brand Content (Left Side) -->
       <div class="brand-content">
         <h1 class="brand-title">多模态数据<br>治理平台</h1>
         <p class="brand-subtitle">Multimodal Data Governance Platform</p>
@@ -27,15 +33,13 @@
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Right Panel: Login & Floating Nodes -->
-    <div class="right-panel">
-      <div class="login-center-wrapper">
+      <!-- Login & Floating Nodes (Overlay on Right) -->
+      <div class="login-overlay-wrapper">
         
         <!-- Floating Nodes Orbit -->
         <div class="orbit-container">
-          <!-- Connection Lines (Optional, SVG layer behind) -->
+          <!-- Connection Lines -->
           <svg class="orbit-connections" viewBox="0 0 1000 1000">
             <circle cx="500" cy="500" r="380" class="orbit-path-ring" />
           </svg>
@@ -133,6 +137,7 @@
             </div>
           </el-form>
         </div>
+
       </div>
     </div>
   </div>
@@ -154,7 +159,7 @@ const globeCanvas = ref<HTMLCanvasElement | null>(null)
 let ctx: CanvasRenderingContext2D | null = null
 let animationFrameId: number
 const stars: Star[] = []
-const STAR_COUNT = 200
+const STAR_COUNT = 300 // Increased star count for full screen
 
 class Star {
   x: number
@@ -214,8 +219,7 @@ const handleResize = () => {
   }
 }
 
-// --- Globe Animation (Left Panel) ---
-// Simplified dot globe for left panel
+// --- Globe Animation ---
 let globeCtx: CanvasRenderingContext2D | null = null
 const globeDots: GlobeDot[] = []
 const GLOBE_RADIUS = 300
@@ -329,22 +333,20 @@ const handleLogin = async () => {
 </script>
 
 <style scoped>
-.split-layout {
+.full-screen-layout {
   display: flex;
   width: 100vw;
   height: 100vh;
   overflow: hidden;
+  position: relative;
 }
 
-/* --- Left Panel --- */
-.left-panel {
-  width: 50%;
+/* --- Main Panel (Full Screen Background) --- */
+.main-panel {
+  width: 100%;
+  height: 100%;
   background-color: #020617; /* Deep Space Black */
   color: #fff;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding: 60px;
   position: relative;
   overflow: hidden;
 }
@@ -362,9 +364,10 @@ const handleLogin = async () => {
 .globe-container {
   position: absolute;
   bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 50%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80%;
+  height: 60%;
   z-index: 2;
   pointer-events: none;
 }
@@ -376,7 +379,7 @@ const handleLogin = async () => {
   bottom: -40%;
   left: 50%;
   transform: translateX(-50%);
-  width: 150%;
+  width: 100%;
   height: 80%;
   border-radius: 50%;
   background: radial-gradient(circle at 50% 100%, #1e40af 0%, #172554 40%, #020617 80%);
@@ -384,44 +387,46 @@ const handleLogin = async () => {
   box-shadow: 0 -20px 100px rgba(59, 130, 246, 0.3), inset 0 20px 60px rgba(56, 189, 248, 0.4); 
 }
 
-.brand-content { position: relative; z-index: 5; }
+/* Brand Content - Left Aligned */
+.brand-content { 
+  position: absolute; 
+  top: 50%; 
+  left: 10%; 
+  transform: translateY(-50%); 
+  z-index: 5; 
+  max-width: 600px;
+}
+
 .brand-title {
-  font-size: 48px;
-  font-weight: 700;
-  line-height: 1.2;
-  margin-bottom: 20px;
+  font-size: 72px;
+  font-weight: 800;
+  line-height: 1.1;
+  margin-bottom: 24px;
   background: linear-gradient(90deg, #fff, #94a3b8);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
+  letter-spacing: 2px;
 }
-.brand-subtitle { font-size: 18px; color: #94a3b8; margin-bottom: 60px; letter-spacing: 1px; }
+.brand-subtitle { font-size: 26px; color: #94a3b8; margin-bottom: 60px; letter-spacing: 2px; font-weight: 300; }
 
-.feature-list { display: flex; flex-direction: column; gap: 20px; }
-.feature-item { display: flex; align-items: center; gap: 15px; color: #e2e8f0; font-size: 14px; }
-.feature-item .icon { color: #f97316; }
+.feature-list { display: flex; flex-direction: column; gap: 24px; }
+.feature-item { display: flex; align-items: center; gap: 20px; color: #e2e8f0; font-size: 20px; font-weight: 500; }
+.feature-item .icon { color: #f97316; font-size: 24px; }
 
 
-/* --- Right Panel --- */
-.right-panel {
-  width: 50%;
-  background-color: #fff;
+/* --- Login Overlay Wrapper (Right Side) --- */
+.login-overlay-wrapper {
+  position: absolute;
+  right: 5%; /* Position on the right */
+  top: 50%;
+  transform: translateY(-50%);
+  width: 800px; /* Width to contain orbit and form */
+  height: 800px;
   display: flex;
   justify-content: center;
   align-items: center;
-  position: relative;
-  /* Subtle Background Pattern */
-  background-image: radial-gradient(#e2e8f0 1px, transparent 1px);
-  background-size: 20px 20px;
-}
-
-.login-center-wrapper {
-  position: relative;
-  width: 100%;
-  max-width: 1000px;
-  height: 1000px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  z-index: 10;
 }
 
 /* --- Floating Orbit Nodes --- */
@@ -440,7 +445,7 @@ const handleLogin = async () => {
 }
 .orbit-path-ring {
   fill: none;
-  stroke: #cbd5e1;
+  stroke: rgba(255, 255, 255, 0.1);
   stroke-width: 1.5;
   stroke-dasharray: 8 8;
   opacity: 0.5;
@@ -452,26 +457,27 @@ const handleLogin = async () => {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  width: 110px; /* Increased size */
+  width: 110px; 
   height: 110px;
-  background: #fff;
+  background: rgba(30, 41, 59, 0.8); /* Dark node background */
   border-radius: 50%;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.08); /* Stronger shadow */
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5); /* Stronger dark shadow */
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   cursor: pointer;
   pointer-events: auto;
   z-index: 1;
-  border: 4px solid #fff; /* Border to pop from bg */
+  border: 2px solid rgba(255, 255, 255, 0.1); /* Subtle light border */
+  backdrop-filter: blur(5px);
 }
 
 .orbit-node:hover {
   transform: scale(1.15) translateY(-5px);
-  box-shadow: 0 15px 40px rgba(59, 130, 246, 0.2);
-  border-color: #f8fafc;
+  box-shadow: 0 15px 40px rgba(59, 130, 246, 0.3);
+  border-color: rgba(59, 130, 246, 0.4);
 }
 
 .node-icon {
-  width: 42px; /* Increased icon */
+  width: 42px;
   height: 42px;
   color: #64748b;
   margin-bottom: 6px;
@@ -479,9 +485,9 @@ const handleLogin = async () => {
 }
 
 .node-label {
-  font-size: 14px; /* Larger Text */
+  font-size: 14px;
   font-weight: 700;
-  color: #475569;
+  color: #e2e8f0; /* Light text */
 }
 
 /* Colors on hover or active */
@@ -492,17 +498,7 @@ const handleLogin = async () => {
 .orbit-node.yellow:hover .node-icon { color: #eab308; }
 .orbit-node.red:hover .node-icon { color: #ef4444; }
 
-/* Positioning (Wider Radius ~380px) */
-/* Wrapper 1000x1000, Center 500,500 */
-/* 
-   Pos 1 (Top): 500, 120
-   Pos 2 (Top Right): 830, 310
-   Pos 3 (Bottom Right): 830, 690
-   Pos 4 (Bottom): 500, 880
-   Pos 5 (Bottom Left): 170, 690
-   Pos 6 (Top Left): 170, 310
-*/
-
+/* Positioning (Matches previous relative geometry but now in overlay) */
 .pos-1 { top: 120px; left: 50%; margin-left: -55px; animation: float 6s ease-in-out infinite; } 
 .pos-2 { top: 310px; right: 170px; animation: float 6s ease-in-out infinite 1s; } 
 .pos-3 { bottom: 310px; right: 170px; animation: float 6s ease-in-out infinite 2s; } 
@@ -518,70 +514,81 @@ const handleLogin = async () => {
 
 /* --- Clean Form --- */
 .login-form-container {
-  width: 340px;
+  width: 400px;
   z-index: 10;
-  background: rgba(255, 255, 255, 0.9);
-  padding: 40px 30px;
-  border-radius: 16px;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.08); /* Clean shadow */
-  backdrop-filter: blur(10px);
+  background: rgba(15, 23, 42, 0.75); /* Darker, slightly opaque for contrast against stars */
+  padding: 50px 40px;
+  border-radius: 24px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .form-title {
   text-align: center;
-  color: #0f172a;
-  font-size: 22px;
-  margin-bottom: 30px;
+  color: #ffffff;
+  font-size: 26px;
+  margin-bottom: 40px;
   font-weight: 700;
   letter-spacing: -0.5px;
 }
 
 .input-label {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
-  color: #94a3b8;
-  margin-bottom: 6px;
-  letter-spacing: 0.5px;
+  color: #cbd5e1;
+  margin-bottom: 8px;
+  letter-spacing: 1px;
 }
 
 .minimal-input :deep(.el-input__wrapper) {
-  background: #f8fafc;
+  background: rgba(2, 6, 23, 0.5); /* Deeper black for inputs */
   box-shadow: none;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 12px;
+  padding: 8px 12px;
   transition: all 0.2s;
 }
+
+.minimal-input :deep(.el-input__inner) {
+  color: #fff;
+  height: 40px;
+}
+
 .minimal-input :deep(.el-input__wrapper:focus-within) {
-  background: #fff;
+  background: rgba(2, 6, 23, 0.8);
   border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
 }
 
 .minimal-button {
   width: 100%;
-  height: 50px;
-  background-color: #0f172a; /* Dark button like branding */
+  height: 56px;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
   border: none;
   font-weight: 600;
   font-size: 16px;
-  margin-top: 20px;
-  border-radius: 8px;
+  margin-top: 30px;
+  border-radius: 12px;
   color: #fff;
+  letter-spacing: 0.5px;
+  transition: all 0.3s;
 }
 .minimal-button:hover {
-  background-color: #1e293b;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(59, 130, 246, 0.4);
 }
 
 .extra-actions {
   text-align: center;
-  margin-top: 20px;
+  margin-top: 24px;
 }
 .forgot-pwd {
-  font-size: 13px;
-  color: #64748b;
+  font-size: 14px;
+  color: #94a3b8;
   cursor: pointer;
   transition: color 0.2s;
 }
-.forgot-pwd:hover { color: #3b82f6; }
+.forgot-pwd:hover { color: #60a5fa; }
 </style>

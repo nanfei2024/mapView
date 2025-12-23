@@ -648,7 +648,7 @@ onUnmounted(() => {
 
 /* ========== 侧边栏样式 ========== */
 .sidebar {
-  width: 260px;
+  width: 220px;
   background: linear-gradient(180deg, #1a1d29 0%, #0f1419 100%);
   display: flex;
   flex-direction: column;
@@ -1019,6 +1019,7 @@ onUnmounted(() => {
   letter-spacing: 1px;
   background: linear-gradient(135deg, #00e5b0 0%, #00a3ff 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
   text-shadow: 0 2px 10px rgba(0, 229, 176, 0.2);
 }
