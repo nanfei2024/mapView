@@ -782,9 +782,19 @@
             });
             
             // 创建章节对象
+            // 处理章节标题：如果chapter已经是"第X章"格式，直接使用；否则添加"第"和"章"
+            let chapterTitle = chapter;
+            if (!chapterTitle.match(/^第.*章$/)) {
+              // 如果chapter是纯数字，转换为"第X章"格式
+              if (/^\d+$/.test(chapterTitle)) {
+                chapterTitle = `第${chapterTitle}章`;
+              }
+              // 如果chapter已经是"第一章"这样的格式，直接使用（不需要else，因为已经是chapterTitle了）
+            }
+            
             return {
               chapter,
-              title: `第${chapter}章`,
+              title: chapterTitle,
               expanded: false,
               sections: files.map(file => {
                 // 从文件名中提取标题
@@ -792,7 +802,19 @@
                 // 移除可能的 bookId_ 前缀（如 "6_1.1.md" -> "1.1.md"）
                 const cleanedName = fileName.replace(/^\d+_/, '');
                 // 移除文件扩展名作为标题
-                const title = cleanedName.replace(/\.(md|markdown)$/i, '');
+                let title = cleanedName.replace(/\.(md|markdown)$/i, '');
+                
+                // 如果标题已经包含章节号前缀（如"第X章"），且与当前章节匹配，则移除重复的章节前缀
+                // 避免显示"第1章 - 第1章 1.1"这样的重复
+                const chapterNumberMatch = chapter.match(/^第?(\d+)章?$/);
+                if (chapterNumberMatch) {
+                  const chapterNum = chapterNumberMatch[1];
+                  // 如果标题以"第X章"开头且X与当前章节号相同，移除这个前缀
+                  const titleChapterMatch = title.match(/^第(\d+)章\s*/);
+                  if (titleChapterMatch && titleChapterMatch[1] === chapterNum) {
+                    title = title.replace(/^第\d+章\s*/, '').trim();
+                  }
+                }
                 
                 // 调试：确认 fileId 设置正确
                 const fileId = file.id;

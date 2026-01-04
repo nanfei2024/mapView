@@ -85,8 +85,8 @@
     </div>
   </template>
   
-<script setup lang="ts">
-import { ref, onMounted } from 'vue';
+  <script setup lang="ts">
+  import { ref, onMounted } from 'vue';
   import { useRouter } from 'vue-router';
   import { ElMessage } from 'element-plus';
   import BookViewer from '../components/BookViewer.vue';
@@ -188,9 +188,9 @@ const props = defineProps<{
     return defaultCovers[bookId] || '/images/default-book-cover.jpg';
   };
   
-// 打开书籍详情
-const openBookDetails = (book: Book) => {
-  selectedBook.value = book;
+  // 打开书籍详情
+  const openBookDetails = (book: Book) => {
+    selectedBook.value = book;
 
   // 结构化展示：在当前页直接以全屏弹窗方式打开 BookViewer
   if (props.structuredMode) {
@@ -201,7 +201,7 @@ const openBookDetails = (book: Book) => {
   // 默认：跳转到目录重构页面
   showBookModal.value = false;
   router.push(`/book-catalog/${book.id}`);
-};
+  };
   
   // 关闭书籍详情
   const closeBookModal = () => {
